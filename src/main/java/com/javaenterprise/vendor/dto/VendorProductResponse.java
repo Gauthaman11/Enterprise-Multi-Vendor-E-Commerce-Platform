@@ -1,6 +1,5 @@
-package com.javaenterprise.product.dto;
+package com.javaenterprise.vendor.dto;
 
-import com.javaenterprise.product.entity.ProductStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,7 +7,7 @@ import java.math.BigDecimal;
 
 @Data
 @Builder
-public class ProductResponse {
+public class VendorProductResponse {
 
     private Long id;
 
@@ -22,10 +21,7 @@ public class ProductResponse {
 
     private String imageUrl;
 
-    private boolean active;
-
     private String category;
 
-    private String vendor;
-    private ProductStatus status;
+    private boolean active;
 }

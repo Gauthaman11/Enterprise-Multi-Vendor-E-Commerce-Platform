@@ -52,11 +52,19 @@ public class Product {
     void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+
         active = true;
+
+        if (status == null) {
+            status = ProductStatus.PENDING;
+        }
     }
 
     @PreUpdate
     void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProductStatus status;
 }

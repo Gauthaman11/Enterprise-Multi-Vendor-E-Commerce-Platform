@@ -36,4 +36,9 @@ public class AuthController {
     public String resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         return authService.resetPassword(request);
     }
+    @PostMapping("/test")
+    public String test() {
+        System.out.println("TEST ENDPOINT HIT");
+        return "OK";
+    }
 }

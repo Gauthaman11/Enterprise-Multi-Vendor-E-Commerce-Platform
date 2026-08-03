@@ -38,8 +38,14 @@ public class AuthService {
             throw new RuntimeException("Email already exists");
         }
 
-        Role customerRole = roleRepository.findByName(RoleName.CUSTOMER.name())
-                .orElseThrow(() -> new RuntimeException("Customer role not found"));
+        RoleName roleName = request.getRole();
+
+        if (roleName == null) {
+            roleName = RoleName.CUSTOMER;
+        }
+
+        Role role = roleRepository.findByName(roleName.name())
+                .orElseThrow(() -> new RuntimeException("Role not found"));
 
         User user = User.builder()
                 .name(request.getName())
@@ -48,7 +54,7 @@ public class AuthService {
                 .enabled(true)
                 .build();
 
-        user.getRoles().add(customerRole);
+        user.getRoles().add(role);
 
         userRepository.save(user);
 
@@ -59,10 +65,11 @@ public class AuthService {
 
         return AuthResponse.builder()
                 .token(token)
+                .tokenType("Bearer")
                 .userId(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
-                .role(customerRole.getName())
+                .role(role.getName())
                 .build();
     }
 

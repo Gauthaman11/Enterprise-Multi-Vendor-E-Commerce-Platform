@@ -4,6 +4,7 @@ import com.javaenterprise.product.dto.ProductRequest;
 import com.javaenterprise.product.dto.ProductResponse;
 import com.javaenterprise.product.entity.Category;
 import com.javaenterprise.product.entity.Product;
+import com.javaenterprise.product.entity.ProductStatus;
 import com.javaenterprise.product.repository.CategoryRepository;
 import com.javaenterprise.product.repository.ProductRepository;
 import com.javaenterprise.user.entity.User;
@@ -41,6 +42,7 @@ public class ProductService {
                 .category(category)
                 .vendor(vendor)
                 .active(true)
+                .status(ProductStatus.PENDING)
                 .build();
 
         productRepository.save(product);
@@ -48,9 +50,10 @@ public class ProductService {
         return map(product);
     }
 
-    public List<ProductResponse> getAll(){
+    public List<ProductResponse> getAll() {
 
-        return productRepository.findByActiveTrue()
+        return productRepository
+                .findByActiveTrueAndStatus(ProductStatus.APPROVED)
                 .stream()
                 .map(this::map)
                 .toList();
@@ -105,12 +108,16 @@ public class ProductService {
                 .active(product.isActive())
                 .category(product.getCategory().getName())
                 .vendor(product.getVendor().getName())
+                .status(product.getStatus())
                 .build();
     }
     public List<ProductResponse> search(String keyword) {
 
         return productRepository
-                .findByNameContainingIgnoreCaseAndActiveTrue(keyword)
+                .findByNameContainingIgnoreCaseAndActiveTrueAndStatus(
+                        keyword,
+                        ProductStatus.APPROVED
+                )
                 .stream()
                 .map(this::map)
                 .toList();
@@ -119,7 +126,10 @@ public class ProductService {
     public List<ProductResponse> category(String category) {
 
         return productRepository
-                .findByCategory_NameIgnoreCaseAndActiveTrue(category)
+                .findByCategory_NameIgnoreCaseAndActiveTrueAndStatus(
+                        category,
+                        ProductStatus.APPROVED
+                )
                 .stream()
                 .map(this::map)
                 .toList();
@@ -128,7 +138,11 @@ public class ProductService {
     public List<ProductResponse> price(BigDecimal min, BigDecimal max) {
 
         return productRepository
-                .findByPriceBetweenAndActiveTrue(min, max)
+                .findByPriceBetweenAndActiveTrueAndStatus(
+                        min,
+                        max,
+                        ProductStatus.APPROVED
+                )
                 .stream()
                 .map(this::map)
                 .toList();
