@@ -1,0 +1,33 @@
+import api from "./axios";
+
+// ---------- Products (existing, keep as-is) ----------
+export const addProduct = (data) =>
+  api.post("/products", data);
+
+export const getVendorProducts = () =>
+  api.get("/products/vendor");
+
+// ---------- Inventory & Price Management (SRS 3.iii / 3.iv) ----------
+
+
+
+
+// ---------- Vendor Dashboard / Analytics (SRS 3.vi) ----------
+export const getVendorDashboard = () =>
+  api.get("/vendor/dashboard");
+
+// ---------- Sales Monitoring (SRS 3.v) ----------
+export const getVendorOrders = () =>
+  api.get("/vendor/orders");
+
+
+
+// ✅ Points to the new VendorProductController
+export const updateStock = (id, stock) =>
+  api.patch(`/vendor/products/${id}/stock`, null, { params: { stock } });
+
+export const updatePrice = (id, price) =>
+  api.patch(`/vendor/products/${id}/price`, null, { params: { price } });
+
+export const updateDiscount = (id, discount) =>
+  api.patch(`/vendor/products/${id}/discount`, null, { params: { discount } });
