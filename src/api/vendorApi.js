@@ -31,3 +31,7 @@ export const updatePrice = (id, price) =>
 
 export const updateDiscount = (id, discount) =>
   api.patch(`/vendor/products/${id}/discount`, null, { params: { discount } });
+
+// ✅ Order Status Management
+export const updateOrderStatus = (orderId, status) =>
+  api.put(`/vendor/orders/${orderId}/status`, null, { params: { status } });

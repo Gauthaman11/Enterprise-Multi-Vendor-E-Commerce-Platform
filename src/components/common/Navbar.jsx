@@ -123,6 +123,12 @@ export default function Navbar() {
             >
               Profile
             </Link>
+            <Link
+              to="/addresses"
+              className="rounded-lg px-3 py-2 text-[14px] font-medium text-stone-700 transition hover:bg-stone-100 hover:text-emerald-800"
+            >
+              Addresses
+            </Link>
 
             <div className="mx-2 h-6 w-px bg-stone-200" />
 

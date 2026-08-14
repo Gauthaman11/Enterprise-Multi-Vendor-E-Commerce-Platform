@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCart, updateCartQty, removeCartItem, clearCart, checkoutOrder } from "../../api/customerApi";
+import { getCart, updateCartQty, removeCartItem, clearCart } from "../../api/customerApi";
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -8,7 +8,6 @@ export default function Cart() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [checkingOut, setCheckingOut] = useState(false);
 
   useEffect(() => { loadCart(); }, []);
 
@@ -37,26 +36,11 @@ export default function Cart() {
   const finalTotal = items.reduce((s, i) => s + unitPrice(i) * i.quantity, 0);
   const savings = originalTotal - finalTotal;
 
-  async function handleCheckout() {
-    if (!window.confirm("Proceed to checkout and place your order?")) return;
-    setCheckingOut(true);
-    try {
-      await checkoutOrder();
-      alert("🎉 Order placed successfully!");
-      window.dispatchEvent(new Event("cart-updated"));
-      navigate("/orders");
-    } catch (error) {
-      alert("Failed to place order. Please try again.");
-    } finally {
-      setCheckingOut(false);
-    }
-  }
-
   async function handleQtyChange(item, delta) {
     const newQty = item.quantity + delta;
-    if (newQty < 1) return handleRemove(item.id || item.productId);
+    if (newQty < 1) return handleRemove(item.cartId);
     try {
-      await updateCartQty(item.id || item.productId, newQty);
+      await updateCartQty(item.cartId, newQty);
       loadCart();
       window.dispatchEvent(new Event("cart-updated"));
     } catch (e) { alert("Failed to update quantity"); }
@@ -117,7 +101,7 @@ export default function Cart() {
               className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-rose-700 transition hover:bg-rose-50"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.05.68-.099 1.022-.148m0 0a48.158 48.108 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.05.68-.099 1.022-.148m0 0a48.158 48.158 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
               </svg>
               Clear Cart
             </button>
@@ -142,7 +126,7 @@ export default function Cart() {
                   </thead>
                   <tbody>
                     {items.map((item) => (
-                      <tr key={item.id || item.productId} className="border-b border-stone-100 last:border-0 transition hover:bg-stone-50/40">
+                      <tr key={item.cartId} className="border-b border-stone-100 last:border-0 transition hover:bg-stone-50/40">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <img src={item.imageUrl} alt={item.productName} className="h-14 w-14 rounded-lg object-cover ring-1 ring-stone-200" />
@@ -150,7 +134,6 @@ export default function Cart() {
                           </div>
                         </td>
 
-                        {/* 🆕 Discounted unit price + strikethrough */}
                         <td className="p-4 text-[14px] text-stone-600">
                           <span className="font-semibold text-stone-900">₹{unitPrice(item)}</span>
                           {(item.discountPercentage || 0) > 0 && (
@@ -176,14 +159,13 @@ export default function Cart() {
                           </div>
                         </td>
 
-                        {/* 🆕 Line total uses discounted price */}
                         <td className="p-4 font-['Fraunces',serif] text-[15px] font-semibold text-stone-900 tabular-nums">
                           ₹{unitPrice(item) * item.quantity}
                         </td>
 
                         <td className="p-4 text-right">
                           <button
-                            onClick={() => handleRemove(item.id || item.productId)}
+                            onClick={() => handleRemove(item.cartId)}
                             className="grid h-8 w-8 place-items-center rounded-lg text-rose-600 transition hover:bg-rose-50"
                             aria-label="Remove"
                           >
@@ -221,14 +203,14 @@ export default function Cart() {
                   </div>
                 ) : (
                   items.map((item) => (
-                    <div key={item.id || item.productId} className="flex gap-4 p-4">
+                    <div key={item.cartId} className="flex gap-4 p-4">
                       <img src={item.imageUrl} alt={item.productName} className="h-24 w-24 shrink-0 rounded-xl object-cover ring-1 ring-stone-200" />
                       <div className="flex flex-1 flex-col">
                         <div className="flex justify-between gap-2">
                           <h3 className="font-['Fraunces',serif] text-[15px] font-semibold text-stone-900 leading-snug">
                             {item.productName}
                           </h3>
-                          <button onClick={() => handleRemove(item.id || item.productId)} className="shrink-0 text-rose-600" aria-label="Remove">
+                          <button onClick={() => handleRemove(item.cartId)} className="shrink-0 text-rose-600" aria-label="Remove">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.05.68-.099 1.022-.148m0 0a48.158 48.158 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                             </svg>
@@ -273,7 +255,6 @@ export default function Cart() {
                   <span className="font-semibold text-stone-900 tabular-nums">{totalItems}</span>
                 </div>
 
-                {/* 🆕 Subtotal with strikethrough when discounted */}
                 <div className="flex justify-between py-2 text-[14px] text-stone-600">
                   <span>Subtotal</span>
                   <span className={`font-semibold tabular-nums ${savings > 0 ? "text-stone-400 line-through" : "text-stone-900"}`}>
@@ -281,7 +262,6 @@ export default function Cart() {
                   </span>
                 </div>
 
-                {/* 🆕 Savings row */}
                 {savings > 0 && (
                   <div className="flex justify-between py-2 text-[14px] font-semibold text-emerald-700">
                     <span>Discount savings</span>
@@ -303,28 +283,17 @@ export default function Cart() {
                   </span>
                 </div>
 
+                {/* ✅ ONLY ONE BUTTON: Proceed to Secure Payment */}
                 <button
-                  onClick={handleCheckout}
-                  disabled={items.length === 0 || checkingOut}
-                  className="group mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-800 py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-emerald-800/25 transition-all duration-200 hover:bg-emerald-900 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-stone-300 disabled:shadow-none"
-                >
-                  {checkingOut ? (
-                    <>
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: "spin 0.9s linear infinite" }}>
-                        <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
-                        <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
-                      </svg>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      Proceed to Checkout
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 transition-transform group-hover:translate-x-0.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                      </svg>
-                    </>
-                  )}
-                </button>
+  onClick={() => navigate("/checkout")}
+  disabled={items.length === 0}
+  className="group mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-800 py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-emerald-800/25 transition-all duration-200 hover:bg-emerald-900 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-stone-300 disabled:shadow-none"
+>
+  Proceed to Checkout
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 transition-transform group-hover:translate-x-0.5">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+  </svg>
+</button>
 
                 <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-stone-400">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-3.5 w-3.5">

@@ -51,19 +51,27 @@ export default function Inventory() {
     );
   }
 
-  async function handleSave(p) {
+    async function handleSave(p) {
     const e = getEdit(p);
     setSavingId(p.id);
+    
+    // 🛡️ Prevent "NaN" errors if the user clears the input box to type a new number
+    const newStock = Number(e.stock) || 0;
+    const newPrice = Number(e.price) || 0;
+    const newDiscount = Number(e.discountPercentage) || 0;
+
     try {
-      if (Number(e.stock) !== Number(p.stock)) {
-        await updateStock(p.id, Number(e.stock));
+      if (newStock !== Number(p.stock)) {
+        console.log("🔄 Updating stock...");
+        await updateStock(p.id, newStock);
       }
-      if (Number(e.price) !== Number(p.price)) {
-        await updatePrice(p.id, Number(e.price));
+      if (newPrice !== Number(p.price)) {
+        console.log("🔄 Updating price...");
+        await updatePrice(p.id, newPrice);
       }
-      // ✅ NEW: Save discount
-      if (Number(e.discountPercentage) !== Number(p.discountPercentage || 0)) {
-        await updateDiscount(p.id, Number(e.discountPercentage));
+      if (newDiscount !== Number(p.discountPercentage || 0)) {
+        console.log("🔄 Updating discount...");
+        await updateDiscount(p.id, newDiscount);
       }
       
       const next = { ...edits };
@@ -71,8 +79,12 @@ export default function Inventory() {
       setEdits(next);
       await load();
     } catch (err) {
-      console.error(err);
-      alert("Failed to update inventory");
+      console.error("❌ Inventory Update Error:", err);
+      
+      // 🆕 DIAGNOSTIC ALERT: Shows the exact backend error
+      const status = err.response?.status || "Network";
+      const msg = err.response?.data?.message || err.response?.data || err.message;
+      alert(`Failed to update!\nStatus: ${status}\nBackend says: ${typeof msg === 'string' ? msg : JSON.stringify(msg)}`);
     } finally {
       setSavingId(null);
     }

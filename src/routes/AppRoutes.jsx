@@ -29,6 +29,9 @@ import Cart from "../pages/customer/Cart";
 import CustomerLayout from "../components/customer/CustomerLayout";
 import Order from "../pages/customer/Order";
 import ProductDetails from "../pages/customer/ProductDetails";
+import PaymentPage from "../pages/customer/PaymentPage";
+import Addresses from "../pages/customer/Addresses";
+import Checkout from "../pages/customer/Checkout";
 export default function AppRoutes() {
   return (
     <BrowserRouter>
@@ -62,6 +65,9 @@ export default function AppRoutes() {
           <Route path="orders" element={<Order/>} />
           <Route path="profile" element={<Profile />} />
           <Route path="product/:id" element={<ProductDetails />} />
+          <Route path="payment" element={<PaymentPage />} /> 
+          <Route path="addresses" element={<Addresses />} />
+          <Route path="checkout" element={<Checkout />} />
         </Route>
         
 
