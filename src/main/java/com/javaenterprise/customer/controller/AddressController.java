@@ -12,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/customer/address")
+@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 public class AddressController {
 
@@ -43,5 +44,10 @@ public class AddressController {
                               Authentication authentication) {
 
         addressService.deleteAddress(id, authentication);
+    }
+    @PutMapping("/{id}/default")
+    public AddressResponse setDefaultAddress(@PathVariable Long id,
+                                             Authentication authentication) {
+        return addressService.setDefaultAddress(id, authentication);
     }
 }

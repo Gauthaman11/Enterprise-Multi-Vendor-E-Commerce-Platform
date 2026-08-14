@@ -12,6 +12,7 @@ import com.javaenterprise.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -46,7 +47,7 @@ public class ProductService {
                 .build();
 
         productRepository.save(product);
-
+        System.out.println("Saved successfully");
         return map(product);
     }
 
@@ -106,9 +107,10 @@ public class ProductService {
                 .stock(product.getStock())
                 .imageUrl(product.getImageUrl())
                 .active(product.isActive())
-                .category(product.getCategory().getName())
-                .vendor(product.getVendor().getName())
+                .category(product.getCategory() != null ? product.getCategory().getName() : null)
+                .vendor(product.getVendor() != null ? product.getVendor().getName() : null)
                 .status(product.getStatus())
+                .discountPercentage(product.getDiscountPercentage() != null ? product.getDiscountPercentage() : 0)
                 .build();
     }
     public List<ProductResponse> search(String keyword) {
@@ -147,5 +149,107 @@ public class ProductService {
                 .map(this::map)
                 .toList();
     }
+    public List<ProductResponse> getVendorProducts(Authentication authentication) {
 
+        User vendor = userRepository.findByEmail(authentication.getName())
+                .orElseThrow();
+
+        return productRepository
+                .findByVendor(vendor)
+                .stream()
+                .map(this::map)
+                .toList();
+    }
+    @Transactional
+    public ProductResponse updateDiscount(Long id, Integer discount, Authentication authentication) {
+
+        User vendor = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Vendor not found"));
+
+        Product product = productRepository.findByIdAndVendor(id, vendor)
+                .orElseThrow(() -> new RuntimeException("Product not found or access denied"));
+
+        if (discount == null || discount < 0 || discount > 90) {
+            throw new RuntimeException("Discount must be between 0 and 90");
+        }
+
+        product.setDiscountPercentage(discount);
+        Product saved = productRepository.save(product);
+
+        // ✅ Build response directly — no mapToResponse needed
+        return ProductResponse.builder()
+                .id(saved.getId())
+                .name(saved.getName())
+                .description(saved.getDescription())
+                .price(saved.getPrice())
+                .stock(saved.getStock())
+                .imageUrl(saved.getImageUrl())
+                .active(saved.isActive())
+                .category(saved.getCategory() != null ? saved.getCategory().getName() : null)
+                .vendor(saved.getVendor() != null ? saved.getVendor().getName() : null)
+                .status(saved.getStatus())
+                .discountPercentage(saved.getDiscountPercentage())
+                .build();
+    }
+    @Transactional
+    public ProductResponse updateStock(Long id, Integer stock, Authentication authentication) {
+        User vendor = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Vendor not found"));
+
+        // Security check: ensures vendor can only update their OWN products
+        Product product = productRepository.findByIdAndVendor(id, vendor)
+                .orElseThrow(() -> new RuntimeException("Product not found or access denied"));
+
+        if (stock == null || stock < 0) {
+            throw new RuntimeException("Stock cannot be negative");
+        }
+
+        product.setStock(stock);
+        Product saved = productRepository.save(product);
+
+        return ProductResponse.builder()
+                .id(saved.getId())
+                .name(saved.getName())
+                .description(saved.getDescription())
+                .price(saved.getPrice())
+                .stock(saved.getStock())
+                .imageUrl(saved.getImageUrl())
+                .active(saved.isActive())
+                .category(saved.getCategory() != null ? saved.getCategory().getName() : null)
+                .vendor(saved.getVendor() != null ? saved.getVendor().getName() : null)
+                .status(saved.getStatus())
+                .discountPercentage(saved.getDiscountPercentage())
+                .build();
+    }
+
+    @Transactional
+    public ProductResponse updatePrice(Long id, BigDecimal price, Authentication authentication) {
+        User vendor = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Vendor not found"));
+
+        // Security check: ensures vendor can only update their OWN products
+        Product product = productRepository.findByIdAndVendor(id, vendor)
+                .orElseThrow(() -> new RuntimeException("Product not found or access denied"));
+
+        if (price == null || price.compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("Price cannot be negative");
+        }
+
+        product.setPrice(price);
+        Product saved = productRepository.save(product);
+
+        return ProductResponse.builder()
+                .id(saved.getId())
+                .name(saved.getName())
+                .description(saved.getDescription())
+                .price(saved.getPrice())
+                .stock(saved.getStock())
+                .imageUrl(saved.getImageUrl())
+                .active(saved.isActive())
+                .category(saved.getCategory() != null ? saved.getCategory().getName() : null)
+                .vendor(saved.getVendor() != null ? saved.getVendor().getName() : null)
+                .status(saved.getStatus())
+                .discountPercentage(saved.getDiscountPercentage())
+                .build();
+    }
 }

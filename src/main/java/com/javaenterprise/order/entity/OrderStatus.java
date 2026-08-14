@@ -1,10 +1,12 @@
 package com.javaenterprise.order.entity;
 
 public enum OrderStatus {
-    COMPLETED,
     PENDING,
     CONFIRMED,
     SHIPPED,
     DELIVERED,
-    CANCELLED
+    CANCELLED,
+    REJECTED,
+    RETURN_REQUESTED, // 🆕 Customer wants a refund
+    REFUNDED          // 🆕 Vendor approved, money returned
 }

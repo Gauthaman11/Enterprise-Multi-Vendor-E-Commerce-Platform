@@ -68,4 +68,13 @@ public class VendorOrderController {
 
         return vendorOrderService.deliverOrder(id, authentication);
     }
+
+
+
+    @PutMapping("/{orderId}/status")
+    public void updateOrderStatus(@PathVariable Long orderId,
+                                  @RequestParam String status,
+                                  Authentication authentication) {
+        vendorOrderService.updateOrderStatus(orderId, status, authentication);
+    }
 }

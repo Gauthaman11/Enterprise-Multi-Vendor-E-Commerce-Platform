@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,6 +33,7 @@ public class Product {
     @Column(nullable = false)
     private Integer stock;
 
+    @Column(length = 3000)
     private String imageUrl;
 
     private boolean active;
@@ -67,4 +69,18 @@ public class Product {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductStatus status;
+
+    @Column(nullable = false)
+    private Integer discountPercentage = 0; // Default 0% (No discount)
+
+    // Add this helper method to calculate the final price dynamically
+    @Transient // Tells Hibernate not to save this in the DB, just calculate it
+    public BigDecimal getFinalPrice() {
+        if (discountPercentage == null || discountPercentage <= 0 || discountPercentage > 100) {
+            return price;
+        }
+        BigDecimal discountAmount = price.multiply(BigDecimal.valueOf(discountPercentage))
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        return price.subtract(discountAmount);
+    }
 }

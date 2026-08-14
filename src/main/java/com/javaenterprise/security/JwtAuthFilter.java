@@ -43,7 +43,12 @@ public class JwtAuthFilter extends org.springframework.web.filter.OncePerRequest
 
         try {
             email = jwtUtil.extractEmail(token);
+            System.out.println("========== JWT FILTER ==========");
+            System.out.println("URI: " + request.getRequestURI());
+            System.out.println("Authorization: " + authHeader);
+            System.out.println("Email: " + email);
         } catch (Exception e) {
+            e.printStackTrace();
             filterChain.doFilter(request, response);
             return;
         }
@@ -55,7 +60,7 @@ public class JwtAuthFilter extends org.springframework.web.filter.OncePerRequest
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
                 if (jwtUtil.isTokenValid(token, userDetails)) {
-
+                    System.out.println("🔐 JWT FILTER -> User: " + userDetails + " | Authorities: " + authHeader);
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,
@@ -74,7 +79,9 @@ public class JwtAuthFilter extends org.springframework.web.filter.OncePerRequest
                 // Ignore invalid or deleted users
             }
         }
-
+        System.out.println("Authenticated: "
+                + SecurityContextHolder.getContext().getAuthentication());
+        System.out.println("===============================");
         filterChain.doFilter(request, response);
     }
 }

@@ -30,6 +30,7 @@ public class Order {
     private OrderStatus status;
 
     private BigDecimal totalAmount;
+    private String returnReason;
 
     private LocalDateTime orderDate;
 
@@ -38,6 +39,10 @@ public class Order {
             orphanRemoval = true)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
+    // Add this field to Order.java
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shipping_address_id")
+    private com.javaenterprise.customer.entity.Address shippingAddress;
 
     @PrePersist
     public void onCreate() {

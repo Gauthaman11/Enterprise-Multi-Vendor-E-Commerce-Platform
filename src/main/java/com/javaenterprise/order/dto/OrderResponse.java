@@ -1,5 +1,6 @@
 package com.javaenterprise.order.dto;
 
+import com.javaenterprise.customer.dto.AddressResponse;
 import lombok.Builder;
 import lombok.Data;
 
@@ -20,4 +21,6 @@ public class OrderResponse {
     private BigDecimal totalAmount;
 
     private List<OrderItemResponse> items;
+
+    private AddressResponse shippingAddress;
 }

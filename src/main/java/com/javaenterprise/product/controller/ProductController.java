@@ -18,9 +18,17 @@ public class ProductController {
 
     private final ProductService service;
 
+
     @PostMapping
-    public ProductResponse add(@Valid @RequestBody ProductRequest request,
-                               Authentication authentication){
+    public ProductResponse add(
+            @RequestBody ProductRequest request,
+            Authentication authentication) {
+
+        System.out.println("CategoryId = " + request.getCategoryId());
+        System.out.println("Name = " + request.getName());
+        System.out.println("Price = " + request.getPrice());
+        System.out.println("Image URL: " + request.getImageUrl());
+        System.out.println("Image URL Length: " + request.getImageUrl().length());
 
         return service.add(request, authentication);
     }
@@ -67,6 +75,31 @@ public class ProductController {
             @RequestParam BigDecimal max) {
 
         return service.price(min, max);
+    }
+    @GetMapping("/vendor")
+    public List<ProductResponse> vendorProducts(
+            Authentication authentication) {
+
+        return service.getVendorProducts(authentication);
+    }
+    @PatchMapping("/{id}/discount")
+    public ProductResponse updateDiscount(@PathVariable Long id,
+                                          @RequestParam Integer discount,
+                                          Authentication authentication) {
+        return service.updateDiscount(id, discount, authentication);
+    }
+    @PatchMapping("/{id}/stock")
+    public ProductResponse updateStock(@PathVariable Long id,
+                                       @RequestParam Integer stock,
+                                       Authentication authentication) {
+        return service.updateStock(id, stock, authentication);
+    }
+
+    @PatchMapping("/{id}/price")
+    public ProductResponse updatePrice(@PathVariable Long id,
+                                       @RequestParam BigDecimal price,
+                                       Authentication authentication) {
+        return service.updatePrice(id, price, authentication);
     }
 
 }

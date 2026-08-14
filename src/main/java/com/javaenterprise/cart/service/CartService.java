@@ -12,12 +12,16 @@ import com.javaenterprise.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+// ✅ 1. ADD THIS IMPORT (Make sure it's the Spring one, not jakarta!)
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional // ✅ 2. ADD THIS ANNOTATION to wrap all write operations in a transaction
 public class CartService {
 
     private final CartRepository cartRepository;
@@ -111,6 +115,7 @@ public class CartService {
             throw new RuntimeException("Unauthorized");
         }
 
+        // ✅ This will now work perfectly because of @Transactional
         cartRepository.delete(cart);
     }
 
@@ -119,23 +124,37 @@ public class CartService {
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow();
 
+        // ✅ This derived delete query also requires @Transactional
         cartRepository.deleteByUser(user);
     }
 
-    private CartResponse map(Cart cart) {
 
-        BigDecimal subtotal = cart.getProduct()
-                .getPrice()
-                .multiply(BigDecimal.valueOf(cart.getQuantity()));
+
+    private CartResponse map(Cart cart) {
+        Product p = cart.getProduct();
+        BigDecimal originalPrice = p.getPrice();
+
+        // ✅ 1. Calculate the actual discounted price
+        BigDecimal finalPrice = originalPrice;
+        if (p.getDiscountPercentage() != null && p.getDiscountPercentage() > 0) {
+            BigDecimal discountAmount = originalPrice
+                    .multiply(BigDecimal.valueOf(p.getDiscountPercentage()))
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            finalPrice = originalPrice.subtract(discountAmount);
+        }
+
+        // ✅ 2. Calculate subtotal using the DISCOUNTED price
+        BigDecimal subtotal = finalPrice.multiply(BigDecimal.valueOf(cart.getQuantity()));
 
         return CartResponse.builder()
                 .cartId(cart.getId())
-                .productId(cart.getProduct().getId())
-                .productName(cart.getProduct().getName())
-                .imageUrl(cart.getProduct().getImageUrl())
-                .price(cart.getProduct().getPrice())
+                .productId(p.getId())
+                .productName(p.getName())
+                .imageUrl(p.getImageUrl())
+                .price(originalPrice) // Keep original for UI strikethrough
+                .discountPercentage(p.getDiscountPercentage() != null ? p.getDiscountPercentage() : 0)
                 .quantity(cart.getQuantity())
-                .subtotal(subtotal)
+                .subtotal(subtotal) // ✅ This ensures the backend total is correct!
                 .build();
     }
 }

@@ -28,4 +28,5 @@ public class ProductResponse {
 
     private String vendor;
     private ProductStatus status;
+    private Integer discountPercentage;
 }

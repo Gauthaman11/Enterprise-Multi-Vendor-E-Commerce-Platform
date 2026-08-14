@@ -6,6 +6,7 @@ import com.javaenterprise.customer.entity.Address;
 import com.javaenterprise.customer.repository.AddressRepository;
 import com.javaenterprise.user.entity.User;
 import com.javaenterprise.user.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -101,5 +102,29 @@ public class AddressService {
                 .postalCode(address.getPostalCode())
                 .defaultAddress(address.isDefaultAddress())
                 .build();
+    }
+    @Transactional
+    public AddressResponse setDefaultAddress(Long id, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow();
+
+        // Find the address to set as default
+        Address address = addressRepository.findByIdAndUser(id, user)
+                .orElseThrow();
+
+        // Unset all other default addresses for this user
+        List<Address> allAddresses = addressRepository.findByUser(user);
+        for (Address addr : allAddresses) {
+            if (addr.isDefaultAddress() && !addr.getId().equals(id)) {
+                addr.setDefaultAddress(false);
+                addressRepository.save(addr);
+            }
+        }
+
+        // Set this one as default
+        address.setDefaultAddress(true);
+        addressRepository.save(address);
+
+        return map(address);
     }
 }
