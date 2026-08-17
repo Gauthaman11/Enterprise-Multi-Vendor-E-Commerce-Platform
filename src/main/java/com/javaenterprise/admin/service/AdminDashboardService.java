@@ -49,7 +49,7 @@ public class AdminDashboardService {
 
                 .pendingOrders(orderRepository.countByStatus(OrderStatus.PENDING))
 
-                .completedOrders(orderRepository.countByStatus(OrderStatus.COMPLETED))
+                .completedOrders(orderRepository.countByStatus(OrderStatus.DELIVERED))
 
                 .totalRevenue(revenue)
 

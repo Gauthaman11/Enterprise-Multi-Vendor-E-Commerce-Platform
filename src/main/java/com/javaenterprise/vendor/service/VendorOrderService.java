@@ -185,6 +185,32 @@ public class VendorOrderService {
 
         orderRepository.save(order);
     }
+    @Transactional
+    public void approveRefund(Long orderId, Authentication authentication) {
+        Order order = getAccessibleOrder(orderId, authentication);
 
-    // ✅ DELETED the checkout method - it belongs in OrderService.java, not here
+        if (order.getStatus() != OrderStatus.RETURN_REQUESTED) {
+            throw new RuntimeException("No return request pending for this order");
+        }
+
+        // 1. Mark as Refunded
+        order.setStatus(OrderStatus.REFUNDED);
+
+        // 2. Restore Stock for the vendor's items
+        User vendor = getVendor(authentication);
+        for (OrderItem item : order.getItems()) {
+            if (item.getProduct().getVendor().getId().equals(vendor.getId())) {
+                Product p = item.getProduct();
+                p.setStock(p.getStock() + item.getQuantity());
+                productRepository.save(p);
+            }
+        }
+
+        orderRepository.save(order);
+
+        // 💡 ENTERPRISE NOTE: In a real production app, you would call
+        // razorpayClient.refunds.create(paymentId) here to send money back to the customer's bank!
+    }
+
+
 }

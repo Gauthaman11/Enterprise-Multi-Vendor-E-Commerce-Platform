@@ -43,4 +43,17 @@ public class PaymentController {
     public ResponseEntity<List<PaymentResponse>> getPaymentHistory(Authentication authentication) {
         return ResponseEntity.ok(paymentService.getUserPayments(authentication));
     }
+    @PostMapping("/cod")
+    public ResponseEntity<?> placeCodOrder(@RequestParam Long addressId,
+                                           Authentication authentication) {
+        try {
+            OrderResponse order = paymentService.placeCodOrder(addressId, authentication);
+            return ResponseEntity.ok(order);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage(),
+                    "status", "FAILED"
+            ));
+        }
+    }
 }

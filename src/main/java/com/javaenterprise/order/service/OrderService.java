@@ -160,6 +160,21 @@ public class OrderService {
                         : null)
                 .build();
     }
+    @Transactional
+    public void requestReturn(Long id, String reason, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        Order order = orderRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // Customers can only request returns for DELIVERED orders
+        if (order.getStatus() != OrderStatus.DELIVERED) {
+            throw new RuntimeException("Returns can only be requested for delivered orders");
+        }
+
+        order.setStatus(OrderStatus.RETURN_REQUESTED);
+        order.setReturnReason(reason);
+        orderRepository.save(order);
+    }
     private com.javaenterprise.customer.dto.AddressResponse toAddressResponse(Address address) {
         return com.javaenterprise.customer.dto.AddressResponse.builder()
                 .id(address.getId())

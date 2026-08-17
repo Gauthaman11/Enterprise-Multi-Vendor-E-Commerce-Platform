@@ -40,4 +40,15 @@ public class OrderController {
                             Authentication authentication) {
         orderService.cancelOrder(id, authentication);
     }
+    @PutMapping("/{id}/return")
+    public ResponseEntity<?> requestReturn(@PathVariable Long id,
+                                           @RequestParam String reason,
+                                           Authentication authentication) {
+        try {
+            orderService.requestReturn(id, reason, authentication);
+            return ResponseEntity.ok("Return requested successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

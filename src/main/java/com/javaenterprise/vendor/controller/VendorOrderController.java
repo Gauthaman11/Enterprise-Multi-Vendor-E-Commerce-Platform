@@ -3,6 +3,7 @@ package com.javaenterprise.vendor.controller;
 import com.javaenterprise.vendor.dto.VendorOrderResponse;
 import com.javaenterprise.vendor.service.VendorOrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -76,5 +77,14 @@ public class VendorOrderController {
                                   @RequestParam String status,
                                   Authentication authentication) {
         vendorOrderService.updateOrderStatus(orderId, status, authentication);
+    }
+    @PutMapping("/{orderId}/refund")
+    public ResponseEntity<?> approveRefund(@PathVariable Long orderId, Authentication authentication) {
+        try {
+            vendorOrderService.approveRefund(orderId, authentication);
+            return ResponseEntity.ok("Refund approved and processed");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

@@ -140,4 +140,28 @@ public class PaymentService {
                         .build())
                 .toList();
     }
+    @Transactional
+    public OrderResponse placeCodOrder(Long addressId, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        CartSummaryResponse cart = cartService.getCart(authentication);
+        if (cart.getItems() == null || cart.getItems().isEmpty()) {
+            throw new RuntimeException("Cart is empty");
+        }
+
+        // Create a COD payment record (no Razorpay involved)
+        Payment payment = Payment.builder()
+                .transactionId("COD_" + user.getId() + "_" + System.currentTimeMillis())
+                .amount(cart.getTotalAmount())
+                .status(PaymentStatus.SUCCESS) // Marked successful — vendor will collect cash on delivery
+                .paymentMethod("COD")
+                .user(user)
+                .build();
+
+        paymentRepository.save(payment);
+
+        // Create the order (same as Razorpay success flow)
+        return orderService.checkout(authentication, addressId);
+    }
 }
