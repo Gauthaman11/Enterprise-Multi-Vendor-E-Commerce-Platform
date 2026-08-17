@@ -35,3 +35,6 @@ export const updateDiscount = (id, discount) =>
 // ✅ Order Status Management
 export const updateOrderStatus = (orderId, status) =>
   api.put(`/vendor/orders/${orderId}/status`, null, { params: { status } });
+
+export const approveRefund = (orderId) =>
+  api.put(`/vendor/orders/${orderId}/refund`);

@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCart, getAddresses, addAddress } from "../../api/customerApi";
-import { initiatePayment } from "../../api/paymentApi";
+import { initiatePayment, placeCodOrder } from "../../api/paymentApi";
 
 export default function Checkout() {
   const navigate = useNavigate();
   const [cart, setCart] = useState(null);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState("RAZORPAY"); // 🆕
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -66,7 +67,7 @@ export default function Checkout() {
     }
   }
 
-  async function handleProceedToPayment() {
+  async function handlePlaceOrder() {
     if (!selectedAddressId) {
       alert("Please select a shipping address");
       return;
@@ -74,15 +75,24 @@ export default function Checkout() {
 
     setProcessing(true);
     try {
-      const { data } = await initiatePayment();
-      navigate("/payment", { 
-        state: { 
-          addressId: selectedAddressId,
-          razorpayOrder: data 
-        } 
-      });
+      if (paymentMethod === "RAZORPAY") {
+        // ✅ Online Payment Flow
+        const { data } = await initiatePayment();
+        navigate("/payment", { 
+          state: { 
+            addressId: selectedAddressId,
+            razorpayOrder: data 
+          } 
+        });
+      } else {
+        // ✅ Cash on Delivery Flow
+        await placeCodOrder(selectedAddressId);
+        alert("🎉 Order placed successfully! Pay cash on delivery.");
+        window.dispatchEvent(new Event("cart-updated"));
+        navigate("/orders");
+      }
     } catch (e) {
-      alert("Failed to initiate payment");
+      alert("Failed to place order: " + (e.response?.data?.error || e.message));
       setProcessing(false);
     }
   }
@@ -97,7 +107,9 @@ export default function Checkout() {
         <h1 className="mb-8 font-['Fraunces',serif] text-4xl font-semibold text-stone-900">Checkout</h1>
 
         <div className="grid gap-8 lg:grid-cols-3">
+          {/* Left Column: Address + Payment Method */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Shipping Address */}
             <div className="rounded-2xl border border-stone-200 bg-white p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-stone-900">Shipping Address</h2>
@@ -112,70 +124,17 @@ export default function Checkout() {
               {showAddForm && (
                 <form onSubmit={handleAddAddress} className="mb-6 rounded-lg border border-stone-200 bg-stone-50 p-4">
                   <div className="grid gap-3 md:grid-cols-2">
-                    <input
-                      value={newAddress.fullName}
-                      onChange={(e) => setNewAddress({ ...newAddress, fullName: e.target.value })}
-                      placeholder="Full Name"
-                      required
-                      className="rounded-lg border border-stone-300 px-3 py-2"
-                    />
-                    <input
-                      value={newAddress.phone}
-                      onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
-                      placeholder="Phone"
-                      required
-                      className="rounded-lg border border-stone-300 px-3 py-2"
-                    />
-                    <input
-                      value={newAddress.addressLine}
-                      onChange={(e) => setNewAddress({ ...newAddress, addressLine: e.target.value })}
-                      placeholder="Address Line"
-                      required
-                      className="col-span-full rounded-lg border border-stone-300 px-3 py-2"
-                    />
-                    <input
-                      value={newAddress.city}
-                      onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                      placeholder="City"
-                      required
-                      className="rounded-lg border border-stone-300 px-3 py-2"
-                    />
-                    <input
-                      value={newAddress.state}
-                      onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
-                      placeholder="State"
-                      required
-                      className="rounded-lg border border-stone-300 px-3 py-2"
-                    />
-                    <input
-                      value={newAddress.postalCode}
-                      onChange={(e) => setNewAddress({ ...newAddress, postalCode: e.target.value })}
-                      placeholder="Postal Code"
-                      required
-                      className="rounded-lg border border-stone-300 px-3 py-2"
-                    />
-                    <input
-                      value={newAddress.country}
-                      onChange={(e) => setNewAddress({ ...newAddress, country: e.target.value })}
-                      placeholder="Country"
-                      required
-                      className="rounded-lg border border-stone-300 px-3 py-2"
-                    />
+                    <input value={newAddress.fullName} onChange={(e) => setNewAddress({ ...newAddress, fullName: e.target.value })} placeholder="Full Name" required className="rounded-lg border border-stone-300 px-3 py-2" />
+                    <input value={newAddress.phone} onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })} placeholder="Phone" required className="rounded-lg border border-stone-300 px-3 py-2" />
+                    <input value={newAddress.addressLine} onChange={(e) => setNewAddress({ ...newAddress, addressLine: e.target.value })} placeholder="Address Line" required className="col-span-full rounded-lg border border-stone-300 px-3 py-2" />
+                    <input value={newAddress.city} onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })} placeholder="City" required className="rounded-lg border border-stone-300 px-3 py-2" />
+                    <input value={newAddress.state} onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })} placeholder="State" required className="rounded-lg border border-stone-300 px-3 py-2" />
+                    <input value={newAddress.postalCode} onChange={(e) => setNewAddress({ ...newAddress, postalCode: e.target.value })} placeholder="Postal Code" required className="rounded-lg border border-stone-300 px-3 py-2" />
+                    <input value={newAddress.country} onChange={(e) => setNewAddress({ ...newAddress, country: e.target.value })} placeholder="Country" required className="rounded-lg border border-stone-300 px-3 py-2" />
                   </div>
                   <div className="mt-3 flex gap-2">
-                    <button
-                      type="submit"
-                      className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
-                    >
-                      Save Address
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddForm(false)}
-                      className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-100"
-                    >
-                      Cancel
-                    </button>
+                    <button type="submit" className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">Save Address</button>
+                    <button type="button" onClick={() => setShowAddForm(false)} className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-100">Cancel</button>
                   </div>
                 </form>
               )}
@@ -188,33 +147,20 @@ export default function Checkout() {
                     <label
                       key={addr.id}
                       className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition ${
-                        selectedAddressId === addr.id
-                          ? "border-emerald-600 bg-emerald-50"
-                          : "border-stone-200 hover:border-stone-300"
+                        selectedAddressId === addr.id ? "border-emerald-600 bg-emerald-50" : "border-stone-200 hover:border-stone-300"
                       }`}
                     >
-                      <input
-                        type="radio"
-                        name="address"
-                        value={addr.id}
-                        checked={selectedAddressId === addr.id}
-                        onChange={() => setSelectedAddressId(addr.id)}
-                        className="mt-1"
-                      />
+                      <input type="radio" name="address" value={addr.id} checked={selectedAddressId === addr.id} onChange={() => setSelectedAddressId(addr.id)} className="mt-1" />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-stone-900">{addr.fullName}</span>
                           {addr.defaultAddress && (
-                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold uppercase text-emerald-700">
-                              Default
-                            </span>
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold uppercase text-emerald-700">Default</span>
                           )}
                         </div>
                         <p className="text-sm text-stone-600">{addr.phone}</p>
                         <p className="mt-1 text-sm text-stone-700">{addr.addressLine}</p>
-                        <p className="text-sm text-stone-700">
-                          {addr.city}, {addr.state} {addr.postalCode}
-                        </p>
+                        <p className="text-sm text-stone-700">{addr.city}, {addr.state} {addr.postalCode}</p>
                         <p className="text-sm text-stone-700">{addr.country}</p>
                       </div>
                     </label>
@@ -222,8 +168,62 @@ export default function Checkout() {
                 </div>
               )}
             </div>
+
+            {/* 🆕 Payment Method Selection */}
+            <div className="rounded-2xl border border-stone-200 bg-white p-6">
+              <h2 className="mb-4 text-xl font-semibold text-stone-900">Payment Method</h2>
+              <div className="space-y-3">
+                {/* Online Payment Option */}
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition ${
+                    paymentMethod === "RAZORPAY" ? "border-emerald-600 bg-emerald-50" : "border-stone-200 hover:border-stone-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="RAZORPAY"
+                    checked={paymentMethod === "RAZORPAY"}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-stone-900">Online Payment</span>
+                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold uppercase text-blue-700">Recommended</span>
+                    </div>
+                    <p className="mt-1 text-sm text-stone-600">Pay securely via UPI, Credit/Debit Card, or Net Banking</p>
+                    <p className="mt-1 text-[12px] text-emerald-700 font-medium">✓ Instant confirmation</p>
+                  </div>
+                </label>
+
+                {/* COD Option */}
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition ${
+                    paymentMethod === "COD" ? "border-emerald-600 bg-emerald-50" : "border-stone-200 hover:border-stone-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="COD"
+                    checked={paymentMethod === "COD"}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-stone-900">Cash on Delivery</span>
+                    </div>
+                    <p className="mt-1 text-sm text-stone-600">Pay in cash when your order is delivered</p>
+                    <p className="mt-1 text-[12px] text-amber-700 font-medium">⚠ Pay exact amount to delivery agent</p>
+                  </div>
+                </label>
+              </div>
+            </div>
           </div>
 
+          {/* Right Column: Order Summary */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 rounded-2xl border border-stone-200 bg-white p-6">
               <h2 className="mb-4 text-xl font-semibold text-stone-900">Order Summary</h2>
@@ -231,9 +231,7 @@ export default function Checkout() {
               <div className="space-y-3 border-b border-stone-200 pb-4">
                 {cart.items.map((item) => (
                   <div key={item.cartId} className="flex justify-between text-sm">
-                    <span className="text-stone-600">
-                      {item.productName} × {item.quantity}
-                    </span>
+                    <span className="text-stone-600">{item.productName} × {item.quantity}</span>
                     <span className="font-semibold text-stone-900">₹{item.subtotal}</span>
                   </div>
                 ))}
@@ -251,20 +249,28 @@ export default function Checkout() {
                 <div className="mt-3 border-t border-stone-200 pt-3">
                   <div className="flex items-baseline justify-between">
                     <span className="text-lg font-semibold text-stone-900">Total</span>
-                    <span className="font-['Fraunces',serif] text-3xl font-bold text-stone-900">
-                      ₹{cart.totalAmount}
-                    </span>
+                    <span className="font-['Fraunces',serif] text-3xl font-bold text-stone-900">₹{cart.totalAmount}</span>
                   </div>
                 </div>
               </div>
 
               <button
-                onClick={handleProceedToPayment}
+                onClick={handlePlaceOrder}
                 disabled={processing || !selectedAddressId}
                 className="mt-6 w-full rounded-xl bg-emerald-800 py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-emerald-800/25 transition-all hover:bg-emerald-900 active:scale-[0.99] disabled:bg-stone-300 disabled:shadow-none"
               >
-                {processing ? "Processing..." : "Proceed to Payment"}
+                {processing 
+                  ? "Processing..." 
+                  : paymentMethod === "RAZORPAY" 
+                    ? "Proceed to Online Payment" 
+                    : `Place Order (COD) — ₹${cart.totalAmount}`}
               </button>
+
+              <p className="mt-4 text-center text-[11px] text-stone-400">
+                {paymentMethod === "RAZORPAY" 
+                  ? "Powered by Razorpay • 256-bit SSL Encrypted" 
+                  : "Cash on Delivery • Pay on arrival"}
+              </p>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getVendorOrders, updateOrderStatus } from "../../api/vendorApi";
+import { getVendorOrders, updateOrderStatus, approveRefund } from "../../api/vendorApi";
 
 export default function VendorOrders() {
   const [orders, setOrders] = useState([]);
@@ -12,7 +12,39 @@ export default function VendorOrders() {
     try {
       setLoading(true);
       const res = await getVendorOrders();
-      setOrders(res.data || []);
+      const rawOrders = res.data || [];
+
+      // ✅ FLATTEN: turn each order's nested items[] into individual table rows
+      const rows = [];
+      for (const order of rawOrders) {
+        if (order.items && order.items.length > 0) {
+          for (const item of order.items) {
+            rows.push({
+              orderId: order.orderId,
+              orderDate: order.orderDate,
+              status: order.status,
+              customerName: order.customerName,
+              productName: item.productName,
+              quantity: item.quantity,
+              price: item.price,
+              subtotal: item.subtotal,
+            });
+          }
+        } else {
+          rows.push({
+            orderId: order.orderId,
+            orderDate: order.orderDate,
+            status: order.status,
+            customerName: order.customerName,
+            productName: "(no items)",
+            quantity: 0,
+            price: 0,
+            subtotal: order.totalAmount || 0,
+          });
+        }
+      }
+
+      setOrders(rows);
     } catch (e) {
       console.error("Failed to load orders:", e);
     } finally {
@@ -23,7 +55,11 @@ export default function VendorOrders() {
   async function changeStatus(orderId, status) {
     setSavingKey(orderId + status);
     try {
-      await updateOrderStatus(orderId, status);
+      if (status === "REFUNDED") {
+        await approveRefund(orderId);
+      } else {
+        await updateOrderStatus(orderId, status);
+      }
       await load();
     } catch (e) {
       alert("Failed to update order: " + (e.response?.data?.message || e.message));
@@ -40,6 +76,8 @@ export default function VendorOrders() {
       DELIVERED: "bg-emerald-50 text-emerald-700 ring-emerald-600/15",
       CANCELLED: "bg-rose-50 text-rose-700 ring-rose-600/15",
       REJECTED: "bg-rose-50 text-rose-700 ring-rose-600/15",
+      RETURN_REQUESTED: "bg-amber-50 text-amber-700 ring-amber-600/15",
+      REFUNDED: "bg-emerald-50 text-emerald-700 ring-emerald-600/15",
     };
     return (
       <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] ring-1 ${colors[status] || "bg-stone-100 text-stone-600"}`}>
@@ -88,6 +126,19 @@ export default function VendorOrders() {
         >
           Mark Delivered
         </button>
+      );
+    if (row.status === "RETURN_REQUESTED")
+      return (
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-[11px] font-semibold text-amber-700">Return Requested!</span>
+          <button
+            disabled={busy}
+            onClick={() => changeStatus(row.orderId, "REFUNDED")}
+            className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+          >
+            Approve Refund
+          </button>
+        </div>
       );
     return <span className="text-[12px] text-stone-400">—</span>;
   }

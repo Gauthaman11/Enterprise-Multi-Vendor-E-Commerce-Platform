@@ -72,3 +72,9 @@ export const deleteAddress = (id) =>
 
 export const setDefaultAddress = (id) =>
   axios.put(`${BASE_URL}/customer/address/${id}/default`, {}, { headers: getHeaders() });
+
+export const requestReturn = (orderId, reason) =>
+  axios.put(`${BASE_URL}/customer/orders/${orderId}/return`, null, { 
+    params: { reason }, 
+    headers: getHeaders() 
+  });

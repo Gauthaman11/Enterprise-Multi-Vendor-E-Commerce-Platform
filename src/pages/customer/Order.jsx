@@ -4,6 +4,21 @@ import { getMyOrders, cancelOrder } from "../../api/customerApi";
 export default function Order() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+const [selectedOrderId, setSelectedOrderId] = useState(null);
+const [returnReason, setReturnReason] = useState("");
+async function handleRequestReturn() {
+  if (!returnReason.trim()) return alert("Please provide a reason");
+  try {
+    await requestReturn(selectedOrderId, returnReason);
+    alert("Return requested! The vendor will review it.");
+    setReturnModalOpen(false);
+    setReturnReason("");
+    loadOrders(); // Refresh the list
+  } catch (e) {
+    alert(e.response?.data || "Failed to request return");
+  }
+}
 
   useEffect(() => { loadOrders(); }, []);
 

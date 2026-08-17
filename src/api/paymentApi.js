@@ -19,3 +19,11 @@ export const verifyPayment = (payload, addressId) =>
     payload,
     { headers: getHeaders() }
   );
+
+  // ✅ NEW: Cash on Delivery
+export const placeCodOrder = (addressId) =>
+  axios.post(
+    `${BASE_URL}/customer/payments/cod?addressId=${addressId}`,
+    {},
+    { headers: getHeaders() }
+  );
