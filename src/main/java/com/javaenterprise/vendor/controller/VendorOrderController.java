@@ -1,5 +1,6 @@
 package com.javaenterprise.vendor.controller;
 
+import com.javaenterprise.vendor.dto.VendorEarningsResponse;
 import com.javaenterprise.vendor.dto.VendorOrderResponse;
 import com.javaenterprise.vendor.service.VendorOrderService;
 import lombok.RequiredArgsConstructor;
@@ -86,5 +87,9 @@ public class VendorOrderController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    @GetMapping("/earnings")
+    public VendorEarningsResponse getEarnings(Authentication authentication) {
+        return vendorOrderService.getEarnings(authentication);
     }
 }

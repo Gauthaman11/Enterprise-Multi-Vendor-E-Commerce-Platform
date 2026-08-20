@@ -19,17 +19,29 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "order_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "product_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @Column(nullable = false)
     private Integer quantity;
 
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
+
+    // 🆕 COMMISSION FIELDS
+    @Column(precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal commissionAmount = BigDecimal.ZERO;
+
+    @Column(precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal vendorEarning = BigDecimal.ZERO;
 }

@@ -37,7 +37,6 @@ public class OrderService {
 
     public List<OrderResponse> getOrders(Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
-
         return orderRepository.findByUser(user)
                 .stream()
                 .map(this::mapToResponse)
@@ -46,17 +45,14 @@ public class OrderService {
 
     public OrderResponse getOrder(Long id, Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
-
         Order order = orderRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
-
         return mapToResponse(order);
     }
 
     @Transactional
     public void cancelOrder(Long id, Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
-
         Order order = orderRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
@@ -65,14 +61,11 @@ public class OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLED);
-
-        // Restore stock when cancelled
         for (OrderItem item : order.getItems()) {
             Product product = item.getProduct();
             product.setStock(product.getStock() + item.getQuantity());
             productRepository.save(product);
         }
-
         orderRepository.save(order);
     }
 
@@ -86,7 +79,6 @@ public class OrderService {
             throw new RuntimeException("Cart is empty");
         }
 
-        // ✅ Get shipping address
         Address shippingAddress = addressRepository.findByIdAndUser(addressId, user)
                 .orElseThrow(() -> new RuntimeException("Shipping address not found"));
 
@@ -95,7 +87,7 @@ public class OrderService {
                 .orderDate(LocalDateTime.now())
                 .status(OrderStatus.PENDING)
                 .items(new ArrayList<>())
-                .shippingAddress(shippingAddress) // ✅ Store address with order
+                .shippingAddress(shippingAddress)
                 .build();
 
         BigDecimal orderTotal = BigDecimal.ZERO;
@@ -107,6 +99,7 @@ public class OrderService {
                 throw new RuntimeException("Insufficient stock for: " + product.getName());
             }
 
+            // Calculate discounted price
             BigDecimal originalPrice = product.getPrice();
             BigDecimal finalPrice = originalPrice;
             if (product.getDiscountPercentage() != null && product.getDiscountPercentage() > 0) {
@@ -119,6 +112,18 @@ public class OrderService {
             BigDecimal itemSubtotal = finalPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
             orderTotal = orderTotal.add(itemSubtotal);
 
+            // 🆕 COMMISSION CALCULATION
+            User vendor = product.getVendor();
+            BigDecimal commissionRate = vendor.getCommissionRate() != null
+                    ? vendor.getCommissionRate()
+                    : BigDecimal.valueOf(10.00);
+
+            BigDecimal commissionAmount = itemSubtotal
+                    .multiply(commissionRate)
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+            BigDecimal vendorEarning = itemSubtotal.subtract(commissionAmount);
+
             product.setStock(product.getStock() - cartItem.getQuantity());
             productRepository.save(product);
 
@@ -128,6 +133,8 @@ public class OrderService {
                     .quantity(cartItem.getQuantity())
                     .price(finalPrice)
                     .subtotal(itemSubtotal)
+                    .commissionAmount(commissionAmount)   // 🆕
+                    .vendorEarning(vendorEarning)         // 🆕
                     .build();
 
             order.getItems().add(orderItem);
@@ -140,6 +147,20 @@ public class OrderService {
         return mapToResponse(savedOrder);
     }
 
+    @Transactional
+    public void requestReturn(Long id, String reason, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        Order order = orderRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getStatus() != OrderStatus.DELIVERED) {
+            throw new RuntimeException("Returns can only be requested for delivered orders");
+        }
+
+        order.setStatus(OrderStatus.RETURN_REQUESTED);
+        order.setReturnReason(reason);
+        orderRepository.save(order);
+    }
 
     private OrderResponse mapToResponse(Order order) {
         return OrderResponse.builder()
@@ -160,21 +181,7 @@ public class OrderService {
                         : null)
                 .build();
     }
-    @Transactional
-    public void requestReturn(Long id, String reason, Authentication authentication) {
-        User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
-        Order order = orderRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // Customers can only request returns for DELIVERED orders
-        if (order.getStatus() != OrderStatus.DELIVERED) {
-            throw new RuntimeException("Returns can only be requested for delivered orders");
-        }
-
-        order.setStatus(OrderStatus.RETURN_REQUESTED);
-        order.setReturnReason(reason);
-        orderRepository.save(order);
-    }
     private com.javaenterprise.customer.dto.AddressResponse toAddressResponse(Address address) {
         return com.javaenterprise.customer.dto.AddressResponse.builder()
                 .id(address.getId())

@@ -33,6 +33,12 @@ public class Order {
     private String returnReason;
 
     private LocalDateTime orderDate;
+    // Add these fields
+    @Column(precision = 10, scale = 2)
+    private BigDecimal commissionAmount = BigDecimal.ZERO;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal vendorEarning = BigDecimal.ZERO;
 
     @OneToMany(mappedBy = "order",
             cascade = CascadeType.ALL,

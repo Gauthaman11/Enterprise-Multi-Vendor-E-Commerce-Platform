@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -51,6 +52,11 @@ public class User {
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    // Add this field
+    @Builder.Default
+    @Column(precision = 5, scale = 2)
+    private BigDecimal commissionRate = BigDecimal.valueOf(10.00); // Default 10%
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

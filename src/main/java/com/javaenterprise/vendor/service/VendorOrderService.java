@@ -14,6 +14,7 @@ import com.javaenterprise.product.entity.Product;
 import com.javaenterprise.product.repository.ProductRepository;
 import com.javaenterprise.user.entity.User;
 import com.javaenterprise.user.repository.UserRepository;
+import com.javaenterprise.vendor.dto.VendorEarningsResponse;
 import com.javaenterprise.vendor.dto.VendorOrderItemResponse;
 import com.javaenterprise.vendor.dto.VendorOrderResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -210,6 +208,35 @@ public class VendorOrderService {
 
         // 💡 ENTERPRISE NOTE: In a real production app, you would call
         // razorpayClient.refunds.create(paymentId) here to send money back to the customer's bank!
+    }
+    public VendorEarningsResponse getEarnings(Authentication authentication) {
+        User vendor = getVendor(authentication);
+
+        List<OrderItem> items = orderItemRepository.findByProductVendor(vendor);
+
+        BigDecimal gross = BigDecimal.ZERO;
+        BigDecimal commission = BigDecimal.ZERO;
+        BigDecimal net = BigDecimal.ZERO;
+        Set<Long> orderIds = new HashSet<>();
+
+        for (OrderItem item : items) {
+            gross = gross.add(item.getSubtotal() != null ? item.getSubtotal() : BigDecimal.ZERO);
+            commission = commission.add(item.getCommissionAmount() != null ? item.getCommissionAmount() : BigDecimal.ZERO);
+            net = net.add(item.getVendorEarning() != null ? item.getVendorEarning() : BigDecimal.ZERO);
+            if (item.getOrder() != null) {
+                orderIds.add(item.getOrder().getId());
+            }
+        }
+
+        return VendorEarningsResponse.builder()
+                .grossSales(gross)
+                .totalCommission(commission)
+                .netEarnings(net)
+                .commissionRate(vendor.getCommissionRate() != null
+                        ? vendor.getCommissionRate()
+                        : BigDecimal.valueOf(10))
+                .totalOrders(orderIds.size())
+                .build();
     }
 
 
