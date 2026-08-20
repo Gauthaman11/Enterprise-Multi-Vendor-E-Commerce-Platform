@@ -25,4 +25,8 @@ public class VendorOrderResponse {
     private BigDecimal totalAmount;
 
     private List<VendorOrderItemResponse> items;
+
+    private String couponCode;
+    // 🆕 coupon used on the order
+    private BigDecimal discountAmount;     // 🆕 coupon discount amount
 }

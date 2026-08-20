@@ -2,6 +2,8 @@ package com.javaenterprise.order.service;
 
 import com.javaenterprise.cart.entity.Cart;
 import com.javaenterprise.cart.repository.CartRepository;
+import com.javaenterprise.coupon.dto.CouponValidationResponse;
+import com.javaenterprise.coupon.service.CouponService;
 import com.javaenterprise.customer.entity.Address;
 import com.javaenterprise.customer.repository.AddressRepository;
 import com.javaenterprise.order.dto.OrderItemResponse;
@@ -34,6 +36,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final AddressRepository addressRepository;
+    private final CouponService couponService;
 
     public List<OrderResponse> getOrders(Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
@@ -69,8 +72,11 @@ public class OrderService {
         orderRepository.save(order);
     }
 
+    // 🆕 Make sure you inject CouponService at the top of your OrderService class:
+    // private final CouponService couponService;
+
     @Transactional
-    public OrderResponse checkout(Authentication authentication, Long addressId) {
+    public OrderResponse checkout(Authentication authentication, Long addressId, String couponCode) { // 🆕 Added couponCode parameter
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -133,16 +139,42 @@ public class OrderService {
                     .quantity(cartItem.getQuantity())
                     .price(finalPrice)
                     .subtotal(itemSubtotal)
-                    .commissionAmount(commissionAmount)   // 🆕
-                    .vendorEarning(vendorEarning)         // 🆕
+                    .commissionAmount(commissionAmount)
+                    .vendorEarning(vendorEarning)
                     .build();
 
             order.getItems().add(orderItem);
         }
 
-        order.setTotalAmount(orderTotal);
+        // ==========================================
+        // 🆕 COUPON VALIDATION & APPLICATION LOGIC
+        // ==========================================
+        BigDecimal discount = BigDecimal.ZERO;
+        String appliedCode = null;
+
+        if (couponCode != null && !couponCode.isBlank()) {
+            CouponValidationResponse validation = couponService.validate(couponCode, orderTotal);
+            if (!validation.isValid()) {
+                // Throw an exception if the coupon is invalid, expired, or doesn't meet min order
+                throw new RuntimeException(validation.getMessage());
+            }
+            discount = validation.getDiscountAmount();
+            appliedCode = validation.getCode();
+        }
+
+        // Set the coupon details and the FINAL discounted total on the order
+        order.setCouponCode(appliedCode);
+        order.setDiscountAmount(discount);
+        order.setTotalAmount(orderTotal.subtract(discount));
+        // ==========================================
+
         Order savedOrder = orderRepository.save(order);
         cartRepository.deleteAll(cartItems);
+
+        // 🆕 Increment the usage count for the coupon after successful order creation
+        if (appliedCode != null) {
+            couponService.incrementUsage(appliedCode);
+        }
 
         return mapToResponse(savedOrder);
     }

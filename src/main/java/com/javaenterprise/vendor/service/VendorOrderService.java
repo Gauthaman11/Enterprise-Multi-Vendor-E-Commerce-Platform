@@ -141,6 +141,8 @@ public class VendorOrderService {
                         .quantity(item.getQuantity())
                         .price(item.getPrice())
                         .subtotal(item.getSubtotal())
+                        .originalPrice(item.getProduct().getPrice())            // 🆕
+                        .discountPercentage(item.getProduct().getDiscountPercentage())
                         .build())
                 .toList();
 
@@ -151,6 +153,8 @@ public class VendorOrderService {
                 .orderDate(order.getOrderDate())
                 .status(order.getStatus())
                 .totalAmount(order.getTotalAmount())
+                .couponCode(order.getCouponCode())        // 🆕
+                .discountAmount(order.getDiscountAmount())// 🆕
                 .items(items)
                 .build();
     }

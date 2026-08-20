@@ -40,6 +40,13 @@ public class Order {
     @Column(precision = 10, scale = 2)
     private BigDecimal vendorEarning = BigDecimal.ZERO;
 
+    //Coupon
+    private String couponCode;
+
+    @Builder.Default
+    @Column(precision = 10, scale = 2)
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
     @OneToMany(mappedBy = "order",
             cascade = CascadeType.ALL,
             orphanRemoval = true)

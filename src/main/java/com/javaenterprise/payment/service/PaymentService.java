@@ -2,6 +2,8 @@ package com.javaenterprise.payment.service;
 
 import com.javaenterprise.cart.dto.CartSummaryResponse;
 import com.javaenterprise.cart.service.CartService;
+import com.javaenterprise.coupon.dto.CouponValidationResponse;
+import com.javaenterprise.coupon.service.CouponService; // 🆕 ADD THIS IMPORT
 import com.javaenterprise.order.dto.OrderResponse;
 import com.javaenterprise.order.service.OrderService;
 import com.javaenterprise.payment.dto.PaymentResponse;
@@ -33,6 +35,7 @@ public class PaymentService {
     private final CartService cartService;
     private final OrderService orderService;
     private final UserRepository userRepository;
+    private final CouponService couponService; // 🆕 INJECT COUPON SERVICE
 
     @Value("${razorpay.key.id}")
     private String razorpayKeyId;
@@ -40,8 +43,9 @@ public class PaymentService {
     @Value("${razorpay.key.secret}")
     private String razorpayKeySecret;
 
+    // 🆕 ADD 'couponCode' parameter
     @Transactional
-    public PaymentResponse initiatePayment(Authentication authentication) {
+    public PaymentResponse initiatePayment(Authentication authentication, String couponCode) {
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -50,9 +54,18 @@ public class PaymentService {
             throw new RuntimeException("Cart is empty");
         }
 
+        // 🆕 START COUPON LOGIC
+        BigDecimal amount = cart.getTotalAmount();
+        if (couponCode != null && !couponCode.isBlank()) {
+            CouponValidationResponse v = couponService.validate(couponCode, amount);
+            if (!v.isValid()) throw new RuntimeException(v.getMessage());
+            amount = v.getFinalTotal(); // Razorpay will charge the discounted amount
+        }
+        // 🆕 END COUPON LOGIC
+
         try {
             // Razorpay requires amount in paise
-            int amountInPaise = cart.getTotalAmount().multiply(BigDecimal.valueOf(100)).intValue();
+            int amountInPaise = amount.multiply(BigDecimal.valueOf(100)).intValue();
 
             RazorpayClient razorpayClient = new RazorpayClient(razorpayKeyId, razorpayKeySecret);
             JSONObject orderRequest = new JSONObject();
@@ -65,7 +78,7 @@ public class PaymentService {
             Payment payment = Payment.builder()
                     .transactionId(razorpayOrder.get("receipt"))
                     .razorpayOrderId(razorpayOrder.get("id"))
-                    .amount(cart.getTotalAmount())
+                    .amount(amount) // 🆕 Save the DISCOUNTED amount to the payment record
                     .status(PaymentStatus.INITIATED)
                     .user(user)
                     .build();
@@ -75,9 +88,9 @@ public class PaymentService {
             return PaymentResponse.builder()
                     .paymentId(saved.getId())
                     .razorpayOrderId(razorpayOrder.get("id"))
-                    .amountInPaise(amountInPaise) // Frontend needs this
+                    .amountInPaise(amountInPaise)
                     .amount(saved.getAmount())
-                    .keyId(razorpayKeyId) // Frontend needs public key
+                    .keyId(razorpayKeyId)
                     .status(saved.getStatus().name())
                     .build();
 
@@ -86,8 +99,9 @@ public class PaymentService {
         }
     }
 
+    // 🆕 ADD 'couponCode' parameter
     @Transactional
-    public OrderResponse verifyAndProcessPayment(Map<String, String> payload, Authentication authentication,Long addressId) {
+    public OrderResponse verifyAndProcessPayment(Map<String, String> payload, Authentication authentication, Long addressId, String couponCode) {
         String razorpayOrderId = payload.get("razorpay_order_id");
         String razorpayPaymentId = payload.get("razorpay_payment_id");
         String razorpaySignature = payload.get("razorpay_signature");
@@ -110,8 +124,8 @@ public class PaymentService {
                 payment.setPaymentMethod("RAZORPAY");
                 paymentRepository.save(payment);
 
-                // Triggers OrderService.checkout() -> reduces stock -> clears cart
-                return orderService.checkout(authentication, addressId);
+                // 🆕 PASS couponCode to checkout
+                return orderService.checkout(authentication, addressId, couponCode);
             } else {
                 payment.setStatus(PaymentStatus.FAILED);
                 payment.setFailureReason("Invalid Razorpay Signature");
@@ -123,7 +137,6 @@ public class PaymentService {
         }
     }
 
-    // ✅ ADDED THIS METHOD TO FIX THE "CANNOT FIND SYMBOL" ERROR
     public List<PaymentResponse> getUserPayments(Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -140,8 +153,10 @@ public class PaymentService {
                         .build())
                 .toList();
     }
+
+    // 🆕 ADD 'couponCode' parameter
     @Transactional
-    public OrderResponse placeCodOrder(Long addressId, Authentication authentication) {
+    public OrderResponse placeCodOrder(Long addressId, String couponCode, Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -150,18 +165,26 @@ public class PaymentService {
             throw new RuntimeException("Cart is empty");
         }
 
+        // 🆕 Calculate final amount if a coupon is applied
+        BigDecimal amount = cart.getTotalAmount();
+        if (couponCode != null && !couponCode.isBlank()) {
+            CouponValidationResponse v = couponService.validate(couponCode, amount);
+            if (!v.isValid()) throw new RuntimeException(v.getMessage());
+            amount = v.getFinalTotal();
+        }
+
         // Create a COD payment record (no Razorpay involved)
         Payment payment = Payment.builder()
                 .transactionId("COD_" + user.getId() + "_" + System.currentTimeMillis())
-                .amount(cart.getTotalAmount())
-                .status(PaymentStatus.SUCCESS) // Marked successful — vendor will collect cash on delivery
+                .amount(amount) // 🆕 Save discounted amount
+                .status(PaymentStatus.SUCCESS)
                 .paymentMethod("COD")
                 .user(user)
                 .build();
 
         paymentRepository.save(payment);
 
-        // Create the order (same as Razorpay success flow)
-        return orderService.checkout(authentication, addressId);
+        // 🆕 PASS couponCode to checkout
+        return orderService.checkout(authentication, addressId, couponCode);
     }
 }

@@ -17,11 +17,12 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    // ✅ FIXED CODE
     @PostMapping("/checkout")
     public ResponseEntity<OrderResponse> checkout(@RequestParam Long addressId,
+                                                  @RequestParam(required = false) String couponCode, // 🆕 ADD THIS
                                                   Authentication authentication) {
-        return ResponseEntity.ok(orderService.checkout(authentication, addressId));
+        // 🆕 PASS ALL 3 ARGUMENTS
+        return ResponseEntity.ok(orderService.checkout(authentication, addressId, couponCode));
     }
 
     @GetMapping
