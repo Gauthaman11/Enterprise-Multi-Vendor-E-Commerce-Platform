@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getVendorDashboard } from "../../api/vendorApi";
+import EarningsWidget from "./EarningsWidget";
 
 export default function VendorDashboard() {
   const [stats, setStats] = useState({
@@ -81,6 +82,7 @@ export default function VendorDashboard() {
           Add New Product
         </Link>
       </div>
+       <EarningsWidget />
 
       {/* ===== KPI STATS ===== */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

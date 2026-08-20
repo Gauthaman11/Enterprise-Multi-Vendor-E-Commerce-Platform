@@ -38,3 +38,6 @@ export const updateOrderStatus = (orderId, status) =>
 
 export const approveRefund = (orderId) =>
   api.put(`/vendor/orders/${orderId}/refund`);
+
+export const getVendorEarnings = () =>
+  api.get("/vendor/orders/earnings");
