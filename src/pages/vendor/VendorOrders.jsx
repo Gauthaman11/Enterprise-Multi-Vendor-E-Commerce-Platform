@@ -14,7 +14,6 @@ export default function VendorOrders() {
       const res = await getVendorOrders();
       const rawOrders = res.data || [];
 
-      // ✅ FLATTEN: turn each order's nested items[] into individual table rows
       const rows = [];
       for (const order of rawOrders) {
         if (order.items && order.items.length > 0) {
@@ -28,6 +27,10 @@ export default function VendorOrders() {
               quantity: item.quantity,
               price: item.price,
               subtotal: item.subtotal,
+              originalPrice: item.originalPrice,          
+              discountPercentage: item.discountPercentage, 
+              couponCode: order.couponCode,                
+              couponDiscount: order.discountAmount,        
             });
           }
         } else {
@@ -40,6 +43,10 @@ export default function VendorOrders() {
             quantity: 0,
             price: 0,
             subtotal: order.totalAmount || 0,
+            originalPrice: 0,
+            discountPercentage: 0,
+            couponCode: order.couponCode,
+            couponDiscount: order.discountAmount,
           });
         }
       }
@@ -91,60 +98,25 @@ export default function VendorOrders() {
     if (row.status === "PENDING")
       return (
         <div className="flex justify-end gap-2">
-          <button
-            disabled={busy}
-            onClick={() => changeStatus(row.orderId, "CONFIRMED")}
-            className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
-          >
-            Approve
-          </button>
-          <button
-            disabled={busy}
-            onClick={() => changeStatus(row.orderId, "REJECTED")}
-            className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
-          >
-            Reject
-          </button>
+          <button disabled={busy} onClick={() => changeStatus(row.orderId, "CONFIRMED")} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">Approve</button>
+          <button disabled={busy} onClick={() => changeStatus(row.orderId, "REJECTED")} className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50">Reject</button>
         </div>
       );
     if (row.status === "CONFIRMED")
-      return (
-        <button
-          disabled={busy}
-          onClick={() => changeStatus(row.orderId, "SHIPPED")}
-          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-        >
-          Mark Shipped
-        </button>
-      );
+      return <button disabled={busy} onClick={() => changeStatus(row.orderId, "SHIPPED")} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">Mark Shipped</button>;
     if (row.status === "SHIPPED")
-      return (
-        <button
-          disabled={busy}
-          onClick={() => changeStatus(row.orderId, "DELIVERED")}
-          className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
-        >
-          Mark Delivered
-        </button>
-      );
+      return <button disabled={busy} onClick={() => changeStatus(row.orderId, "DELIVERED")} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">Mark Delivered</button>;
     if (row.status === "RETURN_REQUESTED")
       return (
         <div className="flex flex-col items-end gap-1">
           <span className="text-[11px] font-semibold text-amber-700">Return Requested!</span>
-          <button
-            disabled={busy}
-            onClick={() => changeStatus(row.orderId, "REFUNDED")}
-            className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
-          >
-            Approve Refund
-          </button>
+          <button disabled={busy} onClick={() => changeStatus(row.orderId, "REFUNDED")} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">Approve Refund</button>
         </div>
       );
     return <span className="text-[12px] text-stone-400">—</span>;
   }
 
-  if (loading)
-    return <div className="flex min-h-[60vh] items-center justify-center text-stone-500">Loading orders...</div>;
+  if (loading) return <div className="flex min-h-[60vh] items-center justify-center text-stone-500">Loading orders...</div>;
 
   return (
     <div className="space-y-8">
@@ -166,6 +138,7 @@ export default function VendorOrders() {
                 <th className="px-5 py-3">Product</th>
                 <th className="px-5 py-3">Qty</th>
                 <th className="px-5 py-3">Amount</th>
+                <th className="px-5 py-3">Coupon</th> {/* 🆕 ADDED COUPON HEADER */}
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3 text-right">Action</th>
               </tr>
@@ -177,14 +150,36 @@ export default function VendorOrders() {
                   <td className="px-5 py-4 text-stone-600">{row.customerName}</td>
                   <td className="px-5 py-4 text-stone-600">{row.productName}</td>
                   <td className="px-5 py-4 text-stone-600">{row.quantity}</td>
-                  <td className="px-5 py-4 font-semibold text-stone-900">₹{row.subtotal}</td>
+                  
+                  {/* 🆕 UPDATED AMOUNT CELL (Shows discount strikethrough) */}
+                  <td className="px-5 py-4">
+                    <span className="font-semibold text-stone-900">₹{row.subtotal}</span>
+                    {(row.discountPercentage || 0) > 0 && (
+                      <span className="ml-1.5 text-[12px] text-stone-400 line-through">
+                        ₹{Number(row.originalPrice) * row.quantity}
+                      </span>
+                    )}
+                  </td>
+
+                  {/* 🆕 ADDED COUPON CELL */}
+                  <td className="px-5 py-4">
+                    {row.couponCode ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-600/15">
+                        🎟️ {row.couponCode} (−₹{row.couponDiscount})
+                      </span>
+                    ) : (
+                      <span className="text-[12px] text-stone-400">—</span>
+                    )}
+                  </td>
+
                   <td className="px-5 py-4"><StatusBadge status={row.status} /></td>
                   <td className="px-5 py-4 text-right"><Actions row={row} /></td>
                 </tr>
               ))}
               {orders.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="px-5 py-16 text-center text-stone-500">
+                  {/* 🆕 UPDATED COLSPAN FROM 7 TO 8 */}
+                  <td colSpan="8" className="px-5 py-16 text-center text-stone-500">
                     No orders yet.
                   </td>
                 </tr>

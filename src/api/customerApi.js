@@ -78,3 +78,8 @@ export const requestReturn = (orderId, reason) =>
     params: { reason }, 
     headers: getHeaders() 
   });
+  export const validateCoupon = (code, orderTotal) =>
+  axios.get(`${BASE_URL}/customer/coupons/validate`, {
+    params: { code, orderTotal },
+    headers: getHeaders(),
+  });

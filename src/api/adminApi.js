@@ -55,3 +55,9 @@ export const deleteCategory = (id) =>
 // ---------- Vendor Commission (Task 2) ----------
 export const updateVendorCommission = (id, rate) =>
   api.put(`/admin/vendors/${id}/commission`, null, { params: { rate } });
+
+export const getCoupons = () => api.get("/admin/coupons");
+export const createCoupon = (data) => api.post("/admin/coupons", data);
+export const updateCoupon = (id, data) => api.put(`/admin/coupons/${id}`, data);
+export const toggleCoupon = (id) => api.patch(`/admin/coupons/${id}/toggle`);
+export const deleteCoupon = (id) => api.delete(`/admin/coupons/${id}`);

@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════
-   FILE 2: ProductDetails.jsx
+   FILE 2: ProductDetails.jsx (✅ FIXED: Shows discounted price)
    ════════════════════════════════════════════════════════════ */
 
 import { useEffect, useState } from "react";
@@ -107,6 +107,13 @@ export default function ProductDetails() {
       </div>
     );
 
+  // ✅ FIXED: Discount calculation (same logic as Home page)
+  const discount = product?.discountPercentage || 0;
+  const finalPrice =
+    discount > 0
+      ? Math.round(Number(product.price) * (1 - discount / 100))
+      : Number(product.price);
+
   return (
     <div className="min-h-screen bg-[#f7f5f1] font-['Manrope',sans-serif]">
       <style>{`
@@ -161,6 +168,13 @@ export default function ProductDetails() {
                 {product.category}
               </span>
             )}
+
+            {/* ✅ FIXED: Discount badge on image */}
+            {discount > 0 && (
+              <span className="absolute right-5 top-5 rounded-full bg-emerald-700 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white shadow-lg shadow-emerald-900/30">
+                {discount}% OFF
+              </span>
+            )}
           </div>
 
           {/* ---------- INFO ---------- */}
@@ -185,13 +199,30 @@ export default function ProductDetails() {
               </span>
             </div>
 
-            {/* Price */}
-            <div className="mt-7 flex items-baseline gap-3">
+            {/* ✅ FIXED: Price block with discount */}
+            <div className="mt-7 flex flex-wrap items-baseline gap-3">
               <span className="font-['Fraunces',serif] text-5xl font-semibold tracking-tight text-emerald-800 tabular-nums">
-                ₹{product.price}
+                ₹{finalPrice}
               </span>
+              {discount > 0 && (
+                <>
+                  <span className="text-xl text-stone-400 line-through tabular-nums">
+                    ₹{product.price}
+                  </span>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-bold uppercase tracking-[0.08em] text-emerald-700 ring-1 ring-emerald-600/15">
+                    {discount}% OFF
+                  </span>
+                </>
+              )}
               <span className="text-sm text-stone-400">incl. of all taxes</span>
             </div>
+
+            {/* ✅ FIXED: Savings hint */}
+            {discount > 0 && (
+              <p className="mt-2 text-[13px] font-semibold text-emerald-700">
+                You save ₹{Number(product.price) - finalPrice} on this item!
+              </p>
+            )}
 
             {/* Stock */}
             <div className="mt-5 flex items-center gap-2">

@@ -10,20 +10,22 @@ const getHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-export const initiatePayment = () =>
-  axios.post(`${BASE_URL}/customer/payments/initiate`, {}, { headers: getHeaders() });
 
-export const verifyPayment = (payload, addressId) =>
-  axios.post(
-    `${BASE_URL}/customer/payments/verify?addressId=${addressId}`,
-    payload,
-    { headers: getHeaders() }
-  );
 
-  // ✅ NEW: Cash on Delivery
-export const placeCodOrder = (addressId) =>
-  axios.post(
-    `${BASE_URL}/customer/payments/cod?addressId=${addressId}`,
-    {},
-    { headers: getHeaders() }
-  );
+  export const initiatePayment = (couponCode) =>
+  axios.post(`${BASE_URL}/customer/payments/initiate`, {}, {
+    params: couponCode ? { couponCode } : {},
+    headers: getHeaders(),
+  });
+
+export const verifyPayment = (payload, addressId, couponCode) =>
+  axios.post(`${BASE_URL}/customer/payments/verify`, payload, {
+    params: { addressId, ...(couponCode ? { couponCode } : {}) },
+    headers: getHeaders(),
+  });
+
+export const placeCodOrder = (addressId, couponCode) =>
+  axios.post(`${BASE_URL}/customer/payments/cod`, {}, {
+    params: { addressId, ...(couponCode ? { couponCode } : {}) },
+    headers: getHeaders(),
+  });

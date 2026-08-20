@@ -23,8 +23,10 @@ import ProductApproval from "../pages/admin/ProductApproval";
 import Products from "../pages/admin/Products";
 import Categories from "../pages/admin/Categories";
 import Users from "../pages/admin/Users";
-import Wishlist from "../pages/customer/Wishlist";
+import Coupons from "../pages/admin/Coupons";
 
+
+import Wishlist from "../pages/customer/Wishlist";
 import Cart from "../pages/customer/Cart";
 import CustomerLayout from "../components/customer/CustomerLayout";
 import Order from "../pages/customer/Order";
@@ -32,6 +34,7 @@ import ProductDetails from "../pages/customer/ProductDetails";
 import PaymentPage from "../pages/customer/PaymentPage";
 import Addresses from "../pages/customer/Addresses";
 import Checkout from "../pages/customer/Checkout";
+
 export default function AppRoutes() {
   return (
     <BrowserRouter>
@@ -102,6 +105,7 @@ export default function AppRoutes() {
           <Route path="products" element={<Products />} />
           <Route path="categories" element={<Categories />} />
           <Route path="users" element={<Users />} />
+          <Route path="coupons" element={<Coupons />} />
         </Route>
       </Routes>
     </BrowserRouter>

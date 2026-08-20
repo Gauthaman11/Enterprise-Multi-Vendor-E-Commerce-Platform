@@ -133,6 +133,16 @@ export default function AdminSidebar() {
               <span className="text-[14px] font-medium">Users</span>
             </NavLink>
           </div>
+          <div className="as-fade-in space-y-1" style={{ animationDelay: "240ms" }}>
+            <NavLink to="/admin/coupons" className={linkStyle}>
+              <span className={iconWrap}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h2l.75-2.75M21 13h-2l-.75-2.75M12 3v10m0 0l-2.25-2.25M12 13l2.25-2.25M6.75 6.75l10.5 10.5" />
+                </svg>
+              </span>
+              <span className="text-[14px] font-medium">Coupons</span>
+            </NavLink>
+          </div>
         </nav>
 
         {/* ===== FOOTER ===== */}
