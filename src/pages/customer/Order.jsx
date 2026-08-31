@@ -1,27 +1,15 @@
 import { useEffect, useState } from "react";
-import { getMyOrders, cancelOrder } from "../../api/customerApi";
+// 🆕 ADDED: requestReturn to the imports
+import { getMyOrders, cancelOrder, requestReturn } from "../../api/customerApi";
 
 export default function Order() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [returnModalOpen, setReturnModalOpen] = useState(false);
-const [selectedOrderId, setSelectedOrderId] = useState(null);
-const [returnReason, setReturnReason] = useState("");
-async function handleRequestReturn() {
-  if (!returnReason.trim()) return alert("Please provide a reason");
-  try {
-    await requestReturn(selectedOrderId, returnReason);
-    alert("Return requested! The vendor will review it.");
-    setReturnModalOpen(false);
-    setReturnReason("");
-    loadOrders(); // Refresh the list
-  } catch (e) {
-    alert(e.response?.data || "Failed to request return");
-  }
-}
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [returnReason, setReturnReason] = useState("");
 
-  useEffect(() => { loadOrders(); }, []);
-
+  // Move loadOrders up so it's cleanly accessible
   async function loadOrders() {
     try {
       const res = await getMyOrders();
@@ -31,6 +19,21 @@ async function handleRequestReturn() {
       setOrders([]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  useEffect(() => { loadOrders(); }, []);
+
+  async function handleRequestReturn() {
+    if (!returnReason.trim()) return alert("Please provide a reason");
+    try {
+      await requestReturn(selectedOrderId, returnReason);
+      alert("Return requested successfully!");
+      setReturnModalOpen(false);
+      setReturnReason("");
+      loadOrders(); // Refresh the list
+    } catch (e) {
+      alert(e.response?.data?.message || "Failed to request return");
     }
   }
 
@@ -45,11 +48,13 @@ async function handleRequestReturn() {
     }
   }
 
+  // 🆕 ADDED: SHIPPED status style for the new warehouse workflow
   const statusStyles = {
     DELIVERED: "bg-emerald-50 text-emerald-700 ring-emerald-600/15",
     CANCELLED: "bg-rose-50 text-rose-700 ring-rose-600/15",
     PENDING: "bg-amber-50 text-amber-700 ring-amber-600/15",
     CONFIRMED: "bg-sky-50 text-sky-700 ring-sky-600/15",
+    SHIPPED: "bg-purple-50 text-purple-700 ring-purple-600/15", // 🆕
   };
 
   if (loading)
@@ -118,9 +123,10 @@ async function handleRequestReturn() {
                       <span className={`h-1.5 w-1.5 rounded-full ${
                         order.status === 'DELIVERED' ? 'bg-emerald-500' :
                         order.status === 'CANCELLED' ? 'bg-rose-500' :
+                        order.status === 'SHIPPED' ? 'bg-purple-500' : // 🆕
                         order.status === 'CONFIRMED' ? 'bg-sky-500' : 'bg-amber-500'
                       }`} />
-                      {order.status}
+                      {order.status.replace('_', ' ')}
                     </span>
                     <span className="font-['Fraunces',serif] text-xl font-semibold tracking-tight text-stone-900 tabular-nums">
                       ₹{order.totalAmount}
@@ -151,6 +157,7 @@ async function handleRequestReturn() {
                     </tbody>
                   </table>
 
+                  {/* Only allow cancel if PENDING or CONFIRMED (not yet shipped) */}
                   {(order.status === 'PENDING' || order.status === 'CONFIRMED') && (
                     <div className="mt-5 flex justify-end border-t border-stone-100 pt-4">
                       <button

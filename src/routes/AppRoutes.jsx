@@ -24,6 +24,7 @@ import Products from "../pages/admin/Products";
 import Categories from "../pages/admin/Categories";
 import Users from "../pages/admin/Users";
 import Coupons from "../pages/admin/Coupons";
+import Warehouses from "../pages/admin/Warehouses";
 
 
 import Wishlist from "../pages/customer/Wishlist";
@@ -34,6 +35,8 @@ import ProductDetails from "../pages/customer/ProductDetails";
 import PaymentPage from "../pages/customer/PaymentPage";
 import Addresses from "../pages/customer/Addresses";
 import Checkout from "../pages/customer/Checkout";
+
+import WarehouseOrders from "../pages/warehouse/WarehouseOrders";
 
 export default function AppRoutes() {
   return (
@@ -106,7 +109,17 @@ export default function AppRoutes() {
           <Route path="categories" element={<Categories />} />
           <Route path="users" element={<Users />} />
           <Route path="coupons" element={<Coupons />} />
+          <Route path="warehouses" element={<Warehouses />} />
         </Route>
+        <Route 
+  path="/warehouse" 
+  element={
+    // If you have a RoleProtectedRoute component, use it like this:
+    <RoleProtectedRoute allowedRoles={["WAREHOUSE_STAFF"]}>
+      <WarehouseOrders />
+    </RoleProtectedRoute>
+  } 
+/>
       </Routes>
     </BrowserRouter>
   );

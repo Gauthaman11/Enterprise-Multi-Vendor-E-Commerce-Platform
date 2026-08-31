@@ -40,6 +40,10 @@ export default function LoginForm() {
       } else if (role === "CUSTOMER") {
         console.log("Go Customer");
         navigate("/");
+      } else if (role === "WAREHOUSE_STAFF") {
+        // 🆕 ADD THIS LINE
+        console.log("Go Warehouse Staff");
+        navigate("/warehouse");
       } else {
         navigate("/profile");
       }

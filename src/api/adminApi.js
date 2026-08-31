@@ -61,3 +61,11 @@ export const createCoupon = (data) => api.post("/admin/coupons", data);
 export const updateCoupon = (id, data) => api.put(`/admin/coupons/${id}`, data);
 export const toggleCoupon = (id) => api.patch(`/admin/coupons/${id}/toggle`);
 export const deleteCoupon = (id) => api.delete(`/admin/coupons/${id}`);
+
+// 🆕 Warehouse Management
+export const getWarehouses = () => api.get("/admin/warehouses");
+
+export const createWarehouse = (data) => api.post("/admin/warehouses", data);
+
+export const assignStaffToWarehouse = (userId, warehouseId) =>
+  api.put("/admin/warehouses/assign-staff", null, { params: { userId, warehouseId } });
