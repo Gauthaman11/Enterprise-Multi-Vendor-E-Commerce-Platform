@@ -1,6 +1,7 @@
 package com.javaenterprise.order.entity;
 
 import com.javaenterprise.product.entity.Product;
+import com.javaenterprise.warehouse.entity.Warehouse;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -44,4 +45,12 @@ public class OrderItem {
     @Column(precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal vendorEarning = BigDecimal.ZERO;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private FulfillmentStatus fulfillmentStatus = FulfillmentStatus.ALLOCATED;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "warehouse_id")
+    private Warehouse warehouse;
 }

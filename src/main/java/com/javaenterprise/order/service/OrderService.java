@@ -8,6 +8,7 @@ import com.javaenterprise.customer.entity.Address;
 import com.javaenterprise.customer.repository.AddressRepository;
 import com.javaenterprise.order.dto.OrderItemResponse;
 import com.javaenterprise.order.dto.OrderResponse;
+import com.javaenterprise.order.entity.FulfillmentStatus;
 import com.javaenterprise.order.entity.Order;
 import com.javaenterprise.order.entity.OrderItem;
 import com.javaenterprise.order.entity.OrderStatus;
@@ -16,6 +17,9 @@ import com.javaenterprise.product.entity.Product;
 import com.javaenterprise.product.repository.ProductRepository;
 import com.javaenterprise.user.entity.User;
 import com.javaenterprise.user.repository.UserRepository;
+import com.javaenterprise.warehouse.entity.Warehouse;
+import com.javaenterprise.warehouse.entity.WarehouseInventory;
+import com.javaenterprise.warehouse.repository.WarehouseInventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -37,6 +41,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final AddressRepository addressRepository;
     private final CouponService couponService;
+    private final WarehouseInventoryRepository warehouseInventoryRepository;
 
     public List<OrderResponse> getOrders(Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
@@ -72,11 +77,8 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    // 🆕 Make sure you inject CouponService at the top of your OrderService class:
-    // private final CouponService couponService;
-
     @Transactional
-    public OrderResponse checkout(Authentication authentication, Long addressId, String couponCode) { // 🆕 Added couponCode parameter
+    public OrderResponse checkout(Authentication authentication, Long addressId, String couponCode) {
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -91,7 +93,7 @@ public class OrderService {
         Order order = Order.builder()
                 .user(user)
                 .orderDate(LocalDateTime.now())
-                .status(OrderStatus.PENDING)
+                .status(OrderStatus.CONFIRMED)
                 .items(new ArrayList<>())
                 .shippingAddress(shippingAddress)
                 .build();
@@ -100,12 +102,34 @@ public class OrderService {
 
         for (Cart cartItem : cartItems) {
             Product product = cartItem.getProduct();
+            int requiredQty = cartItem.getQuantity();
 
-            if (product.getStock() < cartItem.getQuantity()) {
-                throw new RuntimeException("Insufficient stock for: " + product.getName());
+            // ==========================================
+            // 1. WAREHOUSE ALLOCATION LOGIC
+            // ==========================================
+            List<Warehouse> suitableWarehouses = warehouseInventoryRepository
+                    .findWarehousesWithAvailableStock(product.getId(), requiredQty);
+
+            if (suitableWarehouses.isEmpty()) {
+                throw new RuntimeException("Insufficient stock in any warehouse for: " + product.getName());
             }
 
-            // Calculate discounted price
+            Warehouse selectedWarehouse = suitableWarehouses.get(0);
+
+            WarehouseInventory inventory = warehouseInventoryRepository
+                    .findByProductIdAndWarehouseId(product.getId(), selectedWarehouse.getId())
+                    .orElseThrow(() -> new RuntimeException("Inventory record missing for warehouse"));
+
+            inventory.setAllocatedStock(inventory.getAllocatedStock() + requiredQty);
+            warehouseInventoryRepository.save(inventory);
+            // ==========================================
+
+            // 🆕 2. REDUCE MAIN PRODUCT STOCK IMMEDIATELY (So Vendor Dashboard updates)
+            product.setStock(product.getStock() - requiredQty);
+            productRepository.save(product);
+            // ==========================================
+
+            // Calculate discounted price (Vendor discount)
             BigDecimal originalPrice = product.getPrice();
             BigDecimal finalPrice = originalPrice;
             if (product.getDiscountPercentage() != null && product.getDiscountPercentage() > 0) {
@@ -115,39 +139,39 @@ public class OrderService {
                 finalPrice = originalPrice.subtract(discountAmount);
             }
 
-            BigDecimal itemSubtotal = finalPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+            BigDecimal itemSubtotal = finalPrice.multiply(BigDecimal.valueOf(requiredQty));
             orderTotal = orderTotal.add(itemSubtotal);
 
-            // 🆕 COMMISSION CALCULATION
-            User vendor = product.getVendor();
-            BigDecimal commissionRate = vendor.getCommissionRate() != null
-                    ? vendor.getCommissionRate()
-                    : BigDecimal.valueOf(10.00);
+            // ==========================================
+            // FIXED 10% COMMISSION CALCULATION
+            // ==========================================
+            BigDecimal commissionRate = BigDecimal.valueOf(10.00); // Always 10%
 
             BigDecimal commissionAmount = itemSubtotal
                     .multiply(commissionRate)
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
             BigDecimal vendorEarning = itemSubtotal.subtract(commissionAmount);
+            // ==========================================
 
-            product.setStock(product.getStock() - cartItem.getQuantity());
-            productRepository.save(product);
-
+            // 3. Build OrderItem with Warehouse and Fulfillment Status
             OrderItem orderItem = OrderItem.builder()
                     .order(order)
                     .product(product)
-                    .quantity(cartItem.getQuantity())
+                    .quantity(requiredQty)
                     .price(finalPrice)
                     .subtotal(itemSubtotal)
                     .commissionAmount(commissionAmount)
                     .vendorEarning(vendorEarning)
+                    .warehouse(selectedWarehouse)
+                    .fulfillmentStatus(FulfillmentStatus.ALLOCATED)
                     .build();
 
             order.getItems().add(orderItem);
         }
 
         // ==========================================
-        // 🆕 COUPON VALIDATION & APPLICATION LOGIC
+        // COUPON VALIDATION & APPLICATION LOGIC
         // ==========================================
         BigDecimal discount = BigDecimal.ZERO;
         String appliedCode = null;
@@ -155,14 +179,12 @@ public class OrderService {
         if (couponCode != null && !couponCode.isBlank()) {
             CouponValidationResponse validation = couponService.validate(couponCode, orderTotal);
             if (!validation.isValid()) {
-                // Throw an exception if the coupon is invalid, expired, or doesn't meet min order
                 throw new RuntimeException(validation.getMessage());
             }
             discount = validation.getDiscountAmount();
             appliedCode = validation.getCode();
         }
 
-        // Set the coupon details and the FINAL discounted total on the order
         order.setCouponCode(appliedCode);
         order.setDiscountAmount(discount);
         order.setTotalAmount(orderTotal.subtract(discount));
@@ -171,9 +193,9 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
         cartRepository.deleteAll(cartItems);
 
-        // 🆕 Increment the usage count for the coupon after successful order creation
+        // Track coupon usage
         if (appliedCode != null) {
-            couponService.incrementUsage(appliedCode);
+            couponService.trackUsage(appliedCode, user, savedOrder, discount);
         }
 
         return mapToResponse(savedOrder);
@@ -202,6 +224,7 @@ public class OrderService {
                 .totalAmount(order.getTotalAmount())
                 .items(order.getItems().stream()
                         .map(item -> OrderItemResponse.builder()
+                                .id(item.getId())
                                 .productName(item.getProduct().getName())
                                 .price(item.getPrice())
                                 .quantity(item.getQuantity())

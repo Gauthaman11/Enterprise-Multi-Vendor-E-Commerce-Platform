@@ -1,5 +1,6 @@
 package com.javaenterprise.user.entity;
 
+import com.javaenterprise.warehouse.entity.Warehouse;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import jakarta.persistence.JoinColumn;
 
 @Entity
 @Table(name = "users")
@@ -41,6 +43,10 @@ public class User {
     @Builder.Default
     @Column(nullable = false)
     private boolean enabled = true;
+    // 🆕 ADD THIS FIELD FOR WAREHOUSE STAFF ASSIGNMENT
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "warehouse_id")
+    private Warehouse warehouse;
 
     // OAuth2 support
     private String provider; // "LOCAL", "GOOGLE"

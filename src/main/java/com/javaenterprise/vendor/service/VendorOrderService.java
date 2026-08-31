@@ -236,9 +236,7 @@ public class VendorOrderService {
                 .grossSales(gross)
                 .totalCommission(commission)
                 .netEarnings(net)
-                .commissionRate(vendor.getCommissionRate() != null
-                        ? vendor.getCommissionRate()
-                        : BigDecimal.valueOf(10))
+                .commissionRate(BigDecimal.valueOf(10)) // 🆕 Fixed 10% platform fee
                 .totalOrders(orderIds.size())
                 .build();
     }
