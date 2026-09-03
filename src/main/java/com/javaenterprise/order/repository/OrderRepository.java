@@ -29,7 +29,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     """)
     BigDecimal totalRevenue();
 
-    // 🆕 FIXED: Query OrderItems to find Orders assigned to a specific warehouse
     @Query("SELECT DISTINCT o FROM Order o JOIN o.items i WHERE i.warehouse = :warehouse")
     List<Order> findByWarehouse(@Param("warehouse") Warehouse warehouse);
+
+    List<Order> findAllByOrderByOrderDateDesc();
 }

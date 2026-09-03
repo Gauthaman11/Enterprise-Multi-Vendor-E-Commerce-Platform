@@ -18,4 +18,5 @@ public class VendorOrderItemResponse {
     private BigDecimal subtotal;
     private BigDecimal originalPrice;      // 🆕 product's original price
     private Integer discountPercentage;
+    private String fulfillmentStatus;
 }

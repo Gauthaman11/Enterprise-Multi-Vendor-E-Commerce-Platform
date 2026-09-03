@@ -20,6 +20,7 @@ import com.javaenterprise.user.repository.UserRepository;
 import com.javaenterprise.warehouse.entity.Warehouse;
 import com.javaenterprise.warehouse.entity.WarehouseInventory;
 import com.javaenterprise.warehouse.repository.WarehouseInventoryRepository;
+import com.javaenterprise.warehouse.repository.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,7 @@ public class OrderService {
     private final AddressRepository addressRepository;
     private final CouponService couponService;
     private final WarehouseInventoryRepository warehouseInventoryRepository;
+    private final WarehouseRepository warehouseRepository;
 
     public List<OrderResponse> getOrders(Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
@@ -90,10 +92,11 @@ public class OrderService {
         Address shippingAddress = addressRepository.findByIdAndUser(addressId, user)
                 .orElseThrow(() -> new RuntimeException("Shipping address not found"));
 
+        // 🆕 1. Order starts as PENDING, waiting for Admin allocation
         Order order = Order.builder()
                 .user(user)
                 .orderDate(LocalDateTime.now())
-                .status(OrderStatus.CONFIRMED)
+                .status(OrderStatus.PENDING)
                 .items(new ArrayList<>())
                 .shippingAddress(shippingAddress)
                 .build();
@@ -104,30 +107,8 @@ public class OrderService {
             Product product = cartItem.getProduct();
             int requiredQty = cartItem.getQuantity();
 
-            // ==========================================
-            // 1. WAREHOUSE ALLOCATION LOGIC
-            // ==========================================
-            List<Warehouse> suitableWarehouses = warehouseInventoryRepository
-                    .findWarehousesWithAvailableStock(product.getId(), requiredQty);
-
-            if (suitableWarehouses.isEmpty()) {
-                throw new RuntimeException("Insufficient stock in any warehouse for: " + product.getName());
-            }
-
-            Warehouse selectedWarehouse = suitableWarehouses.get(0);
-
-            WarehouseInventory inventory = warehouseInventoryRepository
-                    .findByProductIdAndWarehouseId(product.getId(), selectedWarehouse.getId())
-                    .orElseThrow(() -> new RuntimeException("Inventory record missing for warehouse"));
-
-            inventory.setAllocatedStock(inventory.getAllocatedStock() + requiredQty);
-            warehouseInventoryRepository.save(inventory);
-            // ==========================================
-
-            // 🆕 2. REDUCE MAIN PRODUCT STOCK IMMEDIATELY (So Vendor Dashboard updates)
-            product.setStock(product.getStock() - requiredQty);
-            productRepository.save(product);
-            // ==========================================
+            // 🚫 REMOVED: Automatic warehouse allocation and stock reservation
+            // The Admin will handle this manually after the order is placed.
 
             // Calculate discounted price (Vendor discount)
             BigDecimal originalPrice = product.getPrice();
@@ -142,19 +123,14 @@ public class OrderService {
             BigDecimal itemSubtotal = finalPrice.multiply(BigDecimal.valueOf(requiredQty));
             orderTotal = orderTotal.add(itemSubtotal);
 
-            // ==========================================
-            // FIXED 10% COMMISSION CALCULATION
-            // ==========================================
-            BigDecimal commissionRate = BigDecimal.valueOf(10.00); // Always 10%
-
+            BigDecimal commissionRate = BigDecimal.valueOf(10.00);
             BigDecimal commissionAmount = itemSubtotal
                     .multiply(commissionRate)
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
             BigDecimal vendorEarning = itemSubtotal.subtract(commissionAmount);
-            // ==========================================
 
-            // 3. Build OrderItem with Warehouse and Fulfillment Status
+            // 🆕 2. Build OrderItem WITHOUT Warehouse Assignment
             OrderItem orderItem = OrderItem.builder()
                     .order(order)
                     .product(product)
@@ -163,16 +139,14 @@ public class OrderService {
                     .subtotal(itemSubtotal)
                     .commissionAmount(commissionAmount)
                     .vendorEarning(vendorEarning)
-                    .warehouse(selectedWarehouse)
-                    .fulfillmentStatus(FulfillmentStatus.ALLOCATED)
+                    .warehouse(null) // 👈 No warehouse assigned yet
+                    .fulfillmentStatus(FulfillmentStatus.PENDING) // 👈 Waiting for Admin
                     .build();
 
             order.getItems().add(orderItem);
         }
 
-        // ==========================================
-        // COUPON VALIDATION & APPLICATION LOGIC
-        // ==========================================
+        // Coupon Validation & Application Logic
         BigDecimal discount = BigDecimal.ZERO;
         String appliedCode = null;
 
@@ -188,17 +162,51 @@ public class OrderService {
         order.setCouponCode(appliedCode);
         order.setDiscountAmount(discount);
         order.setTotalAmount(orderTotal.subtract(discount));
-        // ==========================================
 
         Order savedOrder = orderRepository.save(order);
         cartRepository.deleteAll(cartItems);
 
-        // Track coupon usage
         if (appliedCode != null) {
             couponService.trackUsage(appliedCode, user, savedOrder, discount);
         }
 
         return mapToResponse(savedOrder);
+    }
+    @Transactional
+    public void allocateOrderToWarehouse(Long orderId, Long warehouseId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new RuntimeException("Only PENDING orders can be allocated to a warehouse.");
+        }
+
+        Warehouse warehouse = warehouseRepository.findById(warehouseId)
+                .orElseThrow(() -> new RuntimeException("Warehouse not found"));
+
+        for (OrderItem item : order.getItems()) {
+            // 1. Check if the selected warehouse has enough AVAILABLE stock
+            WarehouseInventory inventory = warehouseInventoryRepository
+                    .findByProductIdAndWarehouseId(item.getProduct().getId(), warehouseId)
+                    .orElseThrow(() -> new RuntimeException("Product not found in the selected warehouse"));
+
+            int availableStock = inventory.getTotalStock() - inventory.getAllocatedStock();
+            if (availableStock < item.getQuantity()) {
+                throw new RuntimeException("Insufficient available stock in the selected warehouse for: " + item.getProduct().getName());
+            }
+
+            // 2. Assign the warehouse to the order item
+            item.setWarehouse(warehouse);
+            item.setFulfillmentStatus(FulfillmentStatus.ALLOCATED);
+
+            // 3. RESERVE the stock (increase allocated_stock)
+            inventory.setAllocatedStock(inventory.getAllocatedStock() + item.getQuantity());
+            warehouseInventoryRepository.save(inventory);
+        }
+
+        // 4. Move order to CONFIRMED so Warehouse Staff can see it
+        order.setStatus(OrderStatus.CONFIRMED);
+        orderRepository.save(order);
     }
 
     @Transactional

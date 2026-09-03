@@ -124,8 +124,14 @@ public class PaymentService {
                 payment.setPaymentMethod("RAZORPAY");
                 paymentRepository.save(payment);
 
-                // 🆕 PASS couponCode to checkout
-                return orderService.checkout(authentication, addressId, couponCode);
+                // 1. Create the order
+                OrderResponse orderResponse = orderService.checkout(authentication, addressId, couponCode);
+
+                // 2. 🆕 Link the Payment to the newly created Order
+                payment.setOrderId(orderResponse.getOrderId());
+                paymentRepository.save(payment);
+
+                return orderResponse;
             } else {
                 payment.setStatus(PaymentStatus.FAILED);
                 payment.setFailureReason("Invalid Razorpay Signature");

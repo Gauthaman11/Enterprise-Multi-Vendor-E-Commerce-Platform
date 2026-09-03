@@ -132,18 +132,36 @@ public class VendorOrderService {
     /**
      * Entity -> DTO
      */
+    /**
+     * Entity -> DTO
+     */
     private VendorOrderResponse mapToResponse(Order order, User vendor) {
         List<VendorOrderItemResponse> items = order.getItems()
                 .stream()
                 .filter(item -> item.getProduct().getVendor().getId().equals(vendor.getId()))
-                .map(item -> VendorOrderItemResponse.builder()
-                        .productName(item.getProduct().getName())
-                        .quantity(item.getQuantity())
-                        .price(item.getPrice())
-                        .subtotal(item.getSubtotal())
-                        .originalPrice(item.getProduct().getPrice())            // 🆕
-                        .discountPercentage(item.getProduct().getDiscountPercentage())
-                        .build())
+                .map(item -> {
+                    // 🆕 Get fulfillment status from item, or fall back to main order status
+                    String fStatus = "PENDING";
+                    if (item.getFulfillmentStatus() != null) {
+                        fStatus = item.getFulfillmentStatus().name();
+                    } else if (order.getStatus() == OrderStatus.CONFIRMED) {
+                        fStatus = "ALLOCATED";
+                    } else if (order.getStatus() == OrderStatus.SHIPPED || order.getStatus() == OrderStatus.DELIVERED) {
+                        fStatus = "READY_FOR_SHIPMENT";
+                    } else if (order.getStatus() == OrderStatus.CANCELLED || order.getStatus() == OrderStatus.REFUNDED) {
+                        fStatus = "CANCELLED";
+                    }
+
+                    return VendorOrderItemResponse.builder()
+                            .productName(item.getProduct().getName())
+                            .quantity(item.getQuantity())
+                            .price(item.getPrice())
+                            .subtotal(item.getSubtotal())
+                            .originalPrice(item.getProduct().getPrice())
+                            .discountPercentage(item.getProduct().getDiscountPercentage())
+                            .fulfillmentStatus(fStatus) // 🆕 Map it here!
+                            .build();
+                })
                 .toList();
 
         return VendorOrderResponse.builder()
@@ -153,12 +171,11 @@ public class VendorOrderService {
                 .orderDate(order.getOrderDate())
                 .status(order.getStatus())
                 .totalAmount(order.getTotalAmount())
-                .couponCode(order.getCouponCode())        // 🆕
-                .discountAmount(order.getDiscountAmount())// 🆕
+                .couponCode(order.getCouponCode())
+                .discountAmount(order.getDiscountAmount())
                 .items(items)
                 .build();
     }
-
     @Transactional
     public void updateOrderStatus(Long orderId, String status, Authentication authentication) {
         User vendor = userRepository.findByEmail(authentication.getName())

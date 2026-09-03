@@ -9,5 +9,4 @@ public enum OrderStatus {
     REJECTED,
     RETURN_REQUESTED, // 🆕 Customer wants a refund
     REFUNDED,
-    // 🆕 Vendor approved, money returned
 }

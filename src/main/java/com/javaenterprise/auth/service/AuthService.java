@@ -31,6 +31,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService customUserDetailsService;
+    private final EmailService emailService;
 
     public AuthResponse register(RegisterRequest request) {
 
@@ -103,21 +104,7 @@ public class AuthService {
                 .role(role)
                 .build();
     }
-    public String forgotPassword(ForgotPasswordRequest request) {
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        String token = UUID.randomUUID().toString();
-
-        user.setResetToken(token);
-        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30));
-
-        userRepository.save(user);
-
-        // Email sending will be added later
-        return token;
-    }
     public String resetPassword(ResetPasswordRequest request) {
 
         User user = userRepository.findByResetToken(request.getToken())
@@ -195,4 +182,21 @@ public class AuthService {
                 .enabled(user.isEnabled())
                 .build();
     }
+    public String forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String token = UUID.randomUUID().toString();
+
+        user.setResetToken(token);
+        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30));
+
+        userRepository.save(user);
+
+        // 🆕 ACTUALLY SEND THE EMAIL NOW
+        emailService.sendPasswordResetEmail(user.getEmail(), token);
+
+        return "Password reset link sent successfully to " + user.getEmail();
+    }
+
 }

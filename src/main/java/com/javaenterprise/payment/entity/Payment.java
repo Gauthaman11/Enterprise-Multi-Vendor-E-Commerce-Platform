@@ -39,6 +39,7 @@ public class Payment {
     private String razorpayPaymentId;
 
     private String razorpaySignature;
+    private Long orderId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

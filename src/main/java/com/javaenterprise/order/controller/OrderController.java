@@ -4,6 +4,7 @@ import com.javaenterprise.order.dto.OrderResponse;
 import com.javaenterprise.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -51,5 +52,14 @@ public class OrderController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    @PutMapping("/admin/{orderId}/allocate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> allocateWarehouse(
+            @PathVariable Long orderId,
+            @RequestParam Long warehouseId) {
+
+        orderService.allocateOrderToWarehouse(orderId, warehouseId); // Make sure to add this method to OrderService.java
+        return ResponseEntity.ok("Order successfully allocated to warehouse");
     }
 }
