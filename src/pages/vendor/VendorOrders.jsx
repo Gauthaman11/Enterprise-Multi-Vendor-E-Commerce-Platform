@@ -30,7 +30,8 @@ export default function VendorOrders() {
               originalPrice: item.originalPrice,          
               discountPercentage: item.discountPercentage, 
               couponCode: order.couponCode,                
-              couponDiscount: order.discountAmount,        
+              couponDiscount: order.discountAmount,
+              fulfillmentStatus: item.fulfillmentStatus || 'PENDING',
             });
           }
         } else {
@@ -47,6 +48,7 @@ export default function VendorOrders() {
             discountPercentage: 0,
             couponCode: order.couponCode,
             couponDiscount: order.discountAmount,
+            fulfillmentStatus: 'PENDING',
           });
         }
       }
@@ -75,6 +77,21 @@ export default function VendorOrders() {
     }
   }
 
+  function WarehouseBadge({ status }) {
+    const colors = {
+      ALLOCATED: "bg-amber-50 text-amber-700 ring-amber-600/15",
+      PICKED: "bg-blue-50 text-blue-700 ring-blue-600/15",
+      PACKED: "bg-indigo-50 text-indigo-700 ring-indigo-600/15",
+      READY_FOR_SHIPMENT: "bg-emerald-50 text-emerald-700 ring-emerald-600/15",
+      PENDING: "bg-stone-100 text-stone-600 ring-stone-500/15",
+    };
+    return (
+      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1 ${colors[status] || colors.PENDING}`}>
+        {status.replace(/_/g, ' ')}
+      </span>
+    );
+  }
+
   function StatusBadge({ status }) {
     const colors = {
       PENDING: "bg-amber-50 text-amber-700 ring-amber-600/15",
@@ -93,26 +110,65 @@ export default function VendorOrders() {
     );
   }
 
-  function Actions({ row }) {
+      function Actions({ row }) {
     const busy = savingKey !== null;
-    if (row.status === "PENDING")
+
+    // Terminal states - no actions needed
+    if (row.status === "DELIVERED" || row.status === "CANCELLED" || row.status === "REFUNDED") {
+      return <span className="text-[12px] text-stone-400">—</span>;
+    }
+
+    // Check if the warehouse has already done its job
+    const isWarehouseDone = 
+      row.fulfillmentStatus === "READY_FOR_SHIPMENT" || 
+      row.fulfillmentStatus === "SHIPPED" || 
+      row.status === "SHIPPED";
+
+    if (row.status === "PENDING") {
       return (
         <div className="flex justify-end gap-2">
-          <button disabled={busy} onClick={() => changeStatus(row.orderId, "CONFIRMED")} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">Approve</button>
-          <button disabled={busy} onClick={() => changeStatus(row.orderId, "REJECTED")} className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50">Reject</button>
+          <button disabled={busy} onClick={() => changeStatus(row.orderId, "CONFIRMED")} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
+            Approve
+          </button>
+          <button disabled={busy} onClick={() => changeStatus(row.orderId, "REJECTED")} className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50">
+            Reject
+          </button>
         </div>
       );
-    if (row.status === "CONFIRMED")
-      return <button disabled={busy} onClick={() => changeStatus(row.orderId, "SHIPPED")} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">Mark Shipped</button>;
-    if (row.status === "SHIPPED")
-      return <button disabled={busy} onClick={() => changeStatus(row.orderId, "DELIVERED")} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">Mark Delivered</button>;
-    if (row.status === "RETURN_REQUESTED")
+    }
+
+    // If CONFIRMED, but the warehouse hasn't finished yet
+    if (row.status === "CONFIRMED" && !isWarehouseDone) {
+      return (
+        <div className="flex flex-col items-end gap-1">
+          <span className="text-[11px] text-stone-500">Waiting for Warehouse...</span>
+          <button disabled className="rounded-lg bg-stone-100 px-3 py-1.5 text-[12px] font-semibold text-stone-400 cursor-not-allowed border border-stone-200">
+            Mark Shipped (Handled by Warehouse)
+          </button>
+        </div>
+      );
+    }
+
+    // If the warehouse is done (or main status is SHIPPED), let the Vendor mark it Delivered
+    if (isWarehouseDone) {
+      return (
+        <button disabled={busy} onClick={() => changeStatus(row.orderId, "DELIVERED")} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
+          Mark Delivered
+        </button>
+      );
+    }
+
+    if (row.status === "RETURN_REQUESTED") {
       return (
         <div className="flex flex-col items-end gap-1">
           <span className="text-[11px] font-semibold text-amber-700">Return Requested!</span>
-          <button disabled={busy} onClick={() => changeStatus(row.orderId, "REFUNDED")} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">Approve Refund</button>
+          <button disabled={busy} onClick={() => changeStatus(row.orderId, "REFUNDED")} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
+            Approve Refund
+          </button>
         </div>
       );
+    }
+
     return <span className="text-[12px] text-stone-400">—</span>;
   }
 
@@ -138,7 +194,8 @@ export default function VendorOrders() {
                 <th className="px-5 py-3">Product</th>
                 <th className="px-5 py-3">Qty</th>
                 <th className="px-5 py-3">Amount</th>
-                <th className="px-5 py-3">Coupon</th> {/* 🆕 ADDED COUPON HEADER */}
+                <th className="px-5 py-3">Coupon</th> 
+                <th className="px-5 py-3">Warehouse Status</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3 text-right">Action</th>
               </tr>
@@ -151,7 +208,6 @@ export default function VendorOrders() {
                   <td className="px-5 py-4 text-stone-600">{row.productName}</td>
                   <td className="px-5 py-4 text-stone-600">{row.quantity}</td>
                   
-                  {/* 🆕 UPDATED AMOUNT CELL (Shows discount strikethrough) */}
                   <td className="px-5 py-4">
                     <span className="font-semibold text-stone-900">₹{row.subtotal}</span>
                     {(row.discountPercentage || 0) > 0 && (
@@ -161,7 +217,6 @@ export default function VendorOrders() {
                     )}
                   </td>
 
-                  {/* 🆕 ADDED COUPON CELL */}
                   <td className="px-5 py-4">
                     {row.couponCode ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-600/15">
@@ -172,14 +227,17 @@ export default function VendorOrders() {
                     )}
                   </td>
 
+                  <td className="px-5 py-4">
+                    <WarehouseBadge status={row.fulfillmentStatus} />
+                  </td>
+
                   <td className="px-5 py-4"><StatusBadge status={row.status} /></td>
                   <td className="px-5 py-4 text-right"><Actions row={row} /></td>
                 </tr>
               ))}
               {orders.length === 0 && (
                 <tr>
-                  {/* 🆕 UPDATED COLSPAN FROM 7 TO 8 */}
-                  <td colSpan="8" className="px-5 py-16 text-center text-stone-500">
+                  <td colSpan="9" className="px-5 py-16 text-center text-stone-500">
                     No orders yet.
                   </td>
                 </tr>

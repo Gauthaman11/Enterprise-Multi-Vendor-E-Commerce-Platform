@@ -1,28 +1,17 @@
 import api from "./axios";
 
-// ---------- Products (existing, keep as-is) ----------
-export const addProduct = (data) =>
-  api.post("/products", data);
+// ---------- Products ----------
+export const addProduct = (data) => api.post("/products", data);
+export const getVendorProducts = () => api.get("/products/vendor");
 
-export const getVendorProducts = () =>
-  api.get("/products/vendor");
+// ---------- Vendor Dashboard / Analytics ----------
+export const getVendorDashboard = () => api.get("/vendor/dashboard");
 
-// ---------- Inventory & Price Management (SRS 3.iii / 3.iv) ----------
+// ---------- Sales Monitoring ----------
+export const getVendorOrders = () => api.get("/vendor/orders");
+export const getVendorEarnings = () => api.get("/vendor/orders/earnings");
 
-
-
-
-// ---------- Vendor Dashboard / Analytics (SRS 3.vi) ----------
-export const getVendorDashboard = () =>
-  api.get("/vendor/dashboard");
-
-// ---------- Sales Monitoring (SRS 3.v) ----------
-export const getVendorOrders = () =>
-  api.get("/vendor/orders");
-
-
-
-// ✅ Points to the new VendorProductController
+// ✅ Inventory & Price Management (Use these!)
 export const updateStock = (id, stock) =>
   api.patch(`/vendor/products/${id}/stock`, null, { params: { stock } });
 
@@ -38,6 +27,3 @@ export const updateOrderStatus = (orderId, status) =>
 
 export const approveRefund = (orderId) =>
   api.put(`/vendor/orders/${orderId}/refund`);
-
-export const getVendorEarnings = () =>
-  api.get("/vendor/orders/earnings");

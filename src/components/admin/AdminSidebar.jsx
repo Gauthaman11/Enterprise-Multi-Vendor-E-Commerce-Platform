@@ -132,35 +132,50 @@ export default function AdminSidebar() {
               </span>
               <span className="text-[14px] font-medium">Users</span>
             </NavLink>
-            <NavLink to="/admin/warehouses" className={({ isActive }) => 
-  `flex items-center gap-3 rounded-xl px-3.5 py-2.5 transition ${
-    isActive ? "bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-lg" : "text-stone-300 hover:bg-white/5 hover:text-white"
-  }`
-}>
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.558 0 1.014-.456 1.014-1.014v-3.972c0-.558-.456-1.014-1.014-1.014h-15.27C3.456 12.75 3 13.206 3 13.764v3.972C3 18.294 3.456 18.75 4.014 18.75h1.125M18 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.558 0 1.014-.456 1.014-1.014v-3.972c0-.558-.456-1.014-1.014-1.014h-15.27" />
-  </svg>
-  <span className="text-[14px] font-medium">Warehouses</span>
-</NavLink>
+
+            {/* 🆕 ADDED ORDERS LINK HERE */}
+            <NavLink to="/admin/orders" className={linkStyle}>
+              <span className={iconWrap}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </span>
+              <span className="text-[14px] font-medium">Orders</span>
+            </NavLink>
+
+            <NavLink to="/admin/warehouses" className={linkStyle}>
+              <span className={iconWrap}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.558 0 1.014-.456 1.014-1.014v-3.972c0-.558-.456-1.014-1.014-1.014h-15.27C3.456 12.75 3 13.206 3 13.764v3.972C3 18.294 3.456 18.75 4.014 18.75h1.125M18 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.558 0 1.014-.456 1.014-1.014v-3.972c0-.558-.456-1.014-1.014-1.014h-15.27" />
+                </svg>
+              </span>
+              <span className="text-[14px] font-medium">Warehouses</span>
+            </NavLink>
+
+            <NavLink to="/admin/returns" className={linkStyle}>
+              <span className={iconWrap}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                </svg>
+              </span>
+              <span className="text-[14px] font-medium">Returns</span>
+            </NavLink>
           </div>
           
-          
-<div className="as-fade-in space-y-1" style={{ animationDelay: "240ms" }}>
-  <NavLink to="/admin/coupons" className={linkStyle}>
-    <span className={iconWrap}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h2l.75-2.75M21 13h-2l-.75-2.75M12 3v10m0 0l-2.25-2.25M12 13l2.25-2.25M6.75 6.75l10.5 10.5"
-        />
-      </svg>
-    </span>
-    <span className="text-[14px] font-medium">Coupons</span>
-  </NavLink>
-</div>
-
-          
+          <div className="as-fade-in space-y-1" style={{ animationDelay: "240ms" }}>
+            <NavLink to="/admin/coupons" className={linkStyle}>
+              <span className={iconWrap}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h2l.75-2.75M21 13h-2l-.75-2.75M12 3v10m0 0l-2.25-2.25M12 13l2.25-2.25M6.75 6.75l10.5 10.5"
+                  />
+                </svg>
+              </span>
+              <span className="text-[14px] font-medium">Coupons</span>
+            </NavLink>
+          </div>
         </nav>
 
         {/* ===== FOOTER ===== */}

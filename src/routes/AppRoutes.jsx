@@ -25,6 +25,8 @@ import Categories from "../pages/admin/Categories";
 import Users from "../pages/admin/Users";
 import Coupons from "../pages/admin/Coupons";
 import Warehouses from "../pages/admin/Warehouses";
+import Returns from "../pages/admin/Returns";
+import AdminOrders from "../pages/admin/Orders";
 
 
 import Wishlist from "../pages/customer/Wishlist";
@@ -110,6 +112,8 @@ export default function AppRoutes() {
           <Route path="users" element={<Users />} />
           <Route path="coupons" element={<Coupons />} />
           <Route path="warehouses" element={<Warehouses />} />
+          <Route path="returns" element={<Returns />} />
+          <Route path="orders" element={<AdminOrders />} />
         </Route>
         <Route 
   path="/warehouse" 

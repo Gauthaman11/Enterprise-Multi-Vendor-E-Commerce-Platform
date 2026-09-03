@@ -8,6 +8,10 @@ export default function Order() {
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [returnReason, setReturnReason] = useState("");
+    const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Move loadOrders up so it's cleanly accessible
   async function loadOrders() {
@@ -19,6 +23,31 @@ export default function Order() {
       setOrders([]);
     } finally {
       setLoading(false);
+    }
+  }
+    function openReturnModal(item) {
+    setSelectedItem(item);
+    setReturnReason("");
+    setIsReturnModalOpen(true);
+  }
+
+  async function handleSubmitReturn(e) {
+    e.preventDefault();
+    if (!returnReason.trim()) return alert("Please provide a reason");
+    
+    setIsSubmitting(true);
+    try {
+      // Dynamically import the API to avoid circular dependencies
+      const { requestReturn } = await import("../../api/returnApi");
+      await requestReturn(selectedItem.orderId, selectedItem.id, returnReason);
+      
+      alert("Return requested successfully!");
+      setIsReturnModalOpen(false);
+      loadOrders(); // Refresh the list
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to request return");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -147,13 +176,25 @@ export default function Order() {
                     </thead>
                     <tbody>
                       {order.items?.map((item, index) => (
-                        <tr key={index} className="border-b border-stone-100 last:border-0">
-                          <td className="py-3 text-stone-800">{item.productName}</td>
-                          <td className="py-3 text-stone-600 tabular-nums">₹{item.price}</td>
-                          <td className="py-3 text-stone-600 tabular-nums">× {item.quantity}</td>
-                          <td className="py-3 text-right font-semibold text-stone-900 tabular-nums">₹{item.subtotal}</td>
-                        </tr>
-                      ))}
+  <tr key={index} className="border-b border-stone-100 last:border-0">
+    <td className="py-3 text-stone-800">{item.productName}</td>
+    <td className="py-3 text-stone-600 tabular-nums">₹{item.price}</td>
+    <td className="py-3 text-stone-600 tabular-nums">× {item.quantity}</td>
+    <td className="py-3 text-right font-semibold text-stone-900 tabular-nums">₹{item.subtotal}</td>
+    
+    {/* 🆕 ADD THIS COLUMN FOR RETURN BUTTON */}
+    <td className="py-3 text-right">
+      {order.status === 'DELIVERED' && (
+        <button 
+  onClick={() => openReturnModal({ ...item, orderId: order.orderId })}
+  className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-amber-700 transition hover:bg-amber-50"
+>
+  Return Item
+</button>
+      )}
+    </td>
+  </tr>
+))}
                     </tbody>
                   </table>
 
@@ -177,6 +218,55 @@ export default function Order() {
           </div>
         )}
       </div>
+            {/* 🆕 CUSTOM RETURN MODAL OVERLAY */}
+      {isReturnModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+            {/* Modal Header */}
+            <div className="border-b border-stone-100 bg-stone-50/50 p-5">
+              <h3 className="font-['Fraunces',serif] text-xl font-semibold text-stone-900">
+                Request Return
+              </h3>
+              <p className="mt-1 text-[13px] text-stone-500">
+                Returning: <span className="font-semibold text-stone-700">{selectedItem?.productName}</span>
+              </p>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleSubmitReturn} className="p-5">
+              <label className="mb-1.5 block text-[13px] font-semibold text-stone-700">
+                Reason for Return
+              </label>
+              <textarea
+                value={returnReason}
+                onChange={(e) => setReturnReason(e.target.value)}
+                placeholder="e.g., Item arrived damaged, wrong size, etc."
+                required
+                rows={4}
+                className="w-full rounded-xl border border-stone-200 bg-stone-50/60 p-3 text-[14px] text-stone-900 placeholder-stone-400 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
+              />
+
+              {/* Modal Footer Buttons */}
+              <div className="mt-5 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsReturnModalOpen(false)}
+                  className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-[13px] font-semibold text-stone-700 transition hover:bg-stone-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="rounded-lg bg-emerald-800 px-4 py-2 text-[13px] font-semibold text-white shadow-lg shadow-emerald-800/25 transition hover:bg-emerald-900 disabled:opacity-50"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Request"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

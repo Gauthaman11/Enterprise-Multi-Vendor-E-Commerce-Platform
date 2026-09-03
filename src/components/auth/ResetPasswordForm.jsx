@@ -1,10 +1,14 @@
 import { useForm } from "react-hook-form";
 import { resetPassword } from "../../api/authApi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 
 export default function ResetPasswordForm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // Extract token from URL
+  const tokenFromUrl = searchParams.get("token");
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -14,7 +18,11 @@ export default function ResetPasswordForm() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm();
+  } = useForm({
+    defaultValues: {
+      token: tokenFromUrl || "", // Pre-fill token from URL
+    }
+  });
 
   const password = watch("newPassword");
 
@@ -49,23 +57,26 @@ export default function ResetPasswordForm() {
       </h1>
 
       <p className="text-center text-gray-500 mt-2 mb-8">
-        Enter your reset token and new password.
+        Enter your new password.
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)}>
 
+        {/* Hidden token field - already in URL */}
         <input
-          className="w-full border rounded-lg p-3 mb-4"
-          placeholder="Reset Token"
+          type="hidden"
           {...register("token", {
-            required: "Token is required",
+            required: "Reset token is missing",
           })}
         />
 
-        {errors.token && (
-          <p className="text-red-500 text-sm mb-3">
-            {errors.token.message}
-          </p>
+        {/* Show error if token is missing from URL */}
+        {!tokenFromUrl && (
+          <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 mb-4">
+            <p className="text-rose-600 text-sm">
+              Reset token not found in URL. Please click the link from your email again.
+            </p>
+          </div>
         )}
 
         <input
@@ -105,8 +116,8 @@ export default function ResetPasswordForm() {
         )}
 
         <button
-          disabled={loading}
-          className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg"
+          disabled={loading || !tokenFromUrl}
+          className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           {loading
             ? "Resetting..."
