@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCart, getAddresses, addAddress, validateCoupon } from "../../api/customerApi";
 import { initiatePayment, placeCodOrder } from "../../api/paymentApi";
-import api from "../../api/axios"; // 🆕 Added to fetch coupons
+import api from "../../api/axios";
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -17,8 +17,6 @@ export default function Checkout() {
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
-  
-  // 🆕 State for Available Coupons
   const [availableCoupons, setAvailableCoupons] = useState([]);
 
   const [newAddress, setNewAddress] = useState({
@@ -41,9 +39,8 @@ export default function Checkout() {
       const defaultAddr = addrRes.data?.find(a => a.defaultAddress);
       if (defaultAddr) setSelectedAddressId(defaultAddr.id);
 
-      // 🆕 Fetch available coupons
       try {
-        const couponRes = await api.get("/customer/coupons/active"); // Adjust path if your endpoint is different
+        const couponRes = await api.get("/customer/coupons/active");
         setAvailableCoupons(couponRes.data || []);
       } catch (e) {
         console.warn("Could not load coupons:", e);
@@ -72,7 +69,6 @@ export default function Checkout() {
     applyCouponCode(couponInput.trim());
   }
 
-  // 🆕 Direct apply when clicking the coupon banner
   async function applyCouponCode(code) {
     setCouponInput(code);
     setCouponError("");
@@ -119,19 +115,20 @@ export default function Checkout() {
     }
   }
 
-  if (loading) return <div className="flex min-h-[60vh] items-center justify-center">Loading...</div>;
+  if (loading) return <div className="flex min-h-[60vh] items-center justify-center bg-white">Loading...</div>;
 
   const finalTotal = appliedCoupon ? Number(appliedCoupon.finalTotal) : Number(cart.totalAmount);
 
   return (
-    <div className="min-h-screen bg-[#f7f5f1] py-8">
+    // 🆕 Changed to bg-white
+    <div className="min-h-screen bg-white py-8 font-['Manrope',sans-serif]">
       <div className="mx-auto max-w-6xl px-5">
         <h1 className="mb-8 font-['Fraunces',serif] text-4xl font-semibold text-stone-900">Checkout</h1>
 
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Shipping Address (Kept exactly as you had it) */}
+            {/* Shipping Address */}
             <div className="rounded-2xl border border-stone-200 bg-white p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-stone-900">Shipping Address</h2>
@@ -179,7 +176,7 @@ export default function Checkout() {
               )}
             </div>
 
-            {/* Payment Method (Kept exactly as you had it) */}
+            {/* Payment Method */}
             <div className="rounded-2xl border border-stone-200 bg-white p-6">
               <h2 className="mb-4 text-xl font-semibold text-stone-900">Payment Method</h2>
               <div className="space-y-3">
@@ -206,7 +203,7 @@ export default function Checkout() {
 
           {/* Right Column: Order Summary */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 rounded-2xl border border-stone-200 bg-white p-6">
+            <div className="sticky top-24 rounded-2xl border border-stone-200 bg-white p-6 shadow-[0_12px_32px_-12px_rgba(6,35,31,0.15)]">
               <h2 className="mb-4 text-xl font-semibold text-stone-900">Order Summary</h2>
               
               <div className="space-y-3 border-b border-stone-200 pb-4">
@@ -228,7 +225,7 @@ export default function Checkout() {
                   <span className="font-semibold text-emerald-700">Free</span>
                 </div>
 
-                {/* 🆕 COUPON BOX WITH AVAILABLE OFFERS */}
+                {/* COUPON BOX WITH AVAILABLE OFFERS */}
                 <div className="mt-3 pt-3 border-t border-stone-200">
                   {appliedCoupon ? (
                     <div className="flex items-center justify-between rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2.5">
@@ -240,7 +237,6 @@ export default function Checkout() {
                     </div>
                   ) : (
                     <>
-                      {/* 🎁 AVAILABLE COUPONS BANNER */}
                       {availableCoupons.length > 0 && (
                         <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
                           <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-800">

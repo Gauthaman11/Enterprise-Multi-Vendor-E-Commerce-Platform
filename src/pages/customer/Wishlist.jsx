@@ -47,11 +47,12 @@ export default function Wishlist() {
 
   if (loading)
     return (
-      <div className="flex min-h-[70vh] items-center justify-center bg-[#f7f5f1]">
+      // 🆕 Changed bg-[#f7f5f1] to bg-white
+      <div className="flex min-h-[70vh] items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
           <div className="relative h-14 w-14">
             <div className="absolute inset-0 rounded-full border-4 border-stone-200" />
-            <div className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent" style={{ animation: "spin 0.9s linear infinite" }} />
+            <div className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
           </div>
           <p className="text-[14px] font-medium text-stone-500">Loading wishlist...</p>
         </div>
@@ -59,9 +60,8 @@ export default function Wishlist() {
     );
 
   return (
-    <div className="min-h-screen bg-[#f7f5f1] font-['Manrope',sans-serif]">
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
+    // 🆕 Changed bg-[#f7f5f1] to bg-white
+    <div className="min-h-screen bg-white font-['Manrope',sans-serif]">
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
         {/* Header */}
         <div className="mb-8">
@@ -77,7 +77,8 @@ export default function Wishlist() {
         </div>
 
         {!loading && items.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-stone-300 bg-white/60 p-16 text-center">
+          //  Changed bg-white/60 to bg-white for consistency
+          <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-16 text-center">
             <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-rose-500">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />

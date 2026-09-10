@@ -28,7 +28,6 @@ export default function PaymentPage() {
     }
   }
 
-  // 🆕 Calculate final payable amount (cart total − coupon discount)
   const discount = Number(discountAmount || 0);
   const payable = cart ? Number(cart.totalAmount) - discount : 0;
 
@@ -42,7 +41,7 @@ export default function PaymentPage() {
     try {
       const options = {
         key: razorpayOrder.keyId,
-        amount: razorpayOrder.amountInPaise, // Already discounted on the backend ✅
+        amount: razorpayOrder.amountInPaise,
         currency: "INR",
         name: "ShopStack Enterprise",
         description: "Secure Transaction",
@@ -90,10 +89,11 @@ export default function PaymentPage() {
     }
   }
 
-  if (!cart) return <div className="p-10 text-center">Loading...</div>;
+  if (!cart) return <div className="p-10 text-center bg-white">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-[#f7f5f1] flex items-center justify-center p-5">
+    // 🆕 Changed to bg-white
+    <div className="min-h-screen bg-white flex items-center justify-center p-5 font-['Manrope',sans-serif]">
       <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-8 shadow-xl">
         <div className="mb-8 text-center">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">
@@ -115,7 +115,6 @@ export default function PaymentPage() {
             <span className="font-semibold text-emerald-700">Free</span>
           </div>
 
-          {/* 🆕 COUPON LINE — shows when a coupon was applied */}
           {couponCode && (
             <div className="flex justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[14px]">
               <span className="font-semibold text-emerald-800">🎟️ Coupon: {couponCode.toUpperCase()}</span>

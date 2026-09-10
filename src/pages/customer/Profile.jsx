@@ -38,7 +38,7 @@ export default function Profile() {
 
   if (loading)
     return (
-      <div className="flex min-h-[70vh] items-center justify-center bg-[#f7f5f1]">
+      <div className="flex min-h-[70vh] items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
           <div className="relative h-14 w-14">
             <div className="absolute inset-0 rounded-full border-4 border-stone-200" />
@@ -50,7 +50,7 @@ export default function Profile() {
     );
 
   return (
-    <div className="min-h-screen bg-[#f7f5f1] font-['Manrope',sans-serif]">
+    <div className="min-h-screen bg-white font-['Manrope',sans-serif]">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       <div className="mx-auto max-w-3xl px-5 py-8 sm:px-8 sm:py-12">

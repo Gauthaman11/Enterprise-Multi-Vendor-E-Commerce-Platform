@@ -1,7 +1,3 @@
-/* ════════════════════════════════════════════════════════════
-   FILE 2: ProductDetails.jsx (✅ FIXED: Shows discounted price)
-   ════════════════════════════════════════════════════════════ */
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
@@ -75,11 +71,12 @@ export default function ProductDetails() {
 
   if (loading)
     return (
-      <div className="flex min-h-[70vh] items-center justify-center bg-[#f7f5f1]">
+      // 🆕 Changed to bg-white
+      <div className="flex min-h-[70vh] items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
           <div className="relative h-14 w-14">
             <div className="absolute inset-0 rounded-full border-4 border-stone-200" />
-            <div className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent" style={{ animation: "spin 1s linear infinite" }} />
+            <div className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
           </div>
           <p className="text-[14px] font-medium text-stone-500">Loading product...</p>
         </div>
@@ -88,7 +85,8 @@ export default function ProductDetails() {
 
   if (!product)
     return (
-      <div className="flex min-h-[70vh] flex-col items-center justify-center bg-[#f7f5f1] px-6">
+      // 🆕 Changed to bg-white
+      <div className="flex min-h-[70vh] flex-col items-center justify-center bg-white px-6">
         <span className="mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-amber-50 text-amber-700">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-7 w-7">
             <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
@@ -107,7 +105,6 @@ export default function ProductDetails() {
       </div>
     );
 
-  // ✅ FIXED: Discount calculation (same logic as Home page)
   const discount = product?.discountPercentage || 0;
   const finalPrice =
     discount > 0
@@ -115,11 +112,11 @@ export default function ProductDetails() {
       : Number(product.price);
 
   return (
-    <div className="min-h-screen bg-[#f7f5f1] font-['Manrope',sans-serif]">
+    // 🆕 Changed to bg-white
+    <div className="min-h-screen bg-white font-['Manrope',sans-serif]">
       <style>{`
         @keyframes pd-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         .pd-fade-up { animation: pd-fade-up .6s cubic-bezier(.22, 1, .36, 1) both; }
-        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
       <div className="mx-auto max-w-7xl px-5 py-6 sm:px-8 sm:py-10">
@@ -162,14 +159,12 @@ export default function ProductDetails() {
               />
             </div>
 
-            {/* Category chip overlay */}
             {product.category && (
               <span className="absolute left-5 top-5 rounded-full bg-white/90 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-stone-700 shadow-sm backdrop-blur">
                 {product.category}
               </span>
             )}
 
-            {/* ✅ FIXED: Discount badge on image */}
             {discount > 0 && (
               <span className="absolute right-5 top-5 rounded-full bg-emerald-700 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white shadow-lg shadow-emerald-900/30">
                 {discount}% OFF
@@ -186,7 +181,6 @@ export default function ProductDetails() {
               {product.name}
             </h1>
 
-            {/* Vendor */}
             <div className="mt-3 flex items-center gap-2 text-sm">
               <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-50 text-emerald-700">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-3.5 w-3.5">
@@ -199,7 +193,6 @@ export default function ProductDetails() {
               </span>
             </div>
 
-            {/* ✅ FIXED: Price block with discount */}
             <div className="mt-7 flex flex-wrap items-baseline gap-3">
               <span className="font-['Fraunces',serif] text-5xl font-semibold tracking-tight text-emerald-800 tabular-nums">
                 ₹{finalPrice}
@@ -217,14 +210,12 @@ export default function ProductDetails() {
               <span className="text-sm text-stone-400">incl. of all taxes</span>
             </div>
 
-            {/* ✅ FIXED: Savings hint */}
             {discount > 0 && (
               <p className="mt-2 text-[13px] font-semibold text-emerald-700">
                 You save ₹{Number(product.price) - finalPrice} on this item!
               </p>
             )}
 
-            {/* Stock */}
             <div className="mt-5 flex items-center gap-2">
               <span
                 className={`h-2 w-2 rounded-full ${
@@ -244,7 +235,6 @@ export default function ProductDetails() {
               </span>
             </div>
 
-            {/* Description */}
             <div className="mt-8 border-t border-stone-200 pt-6">
               <h2 className="text-[12px] font-bold uppercase tracking-[0.16em] text-stone-500">
                 About this item
@@ -254,7 +244,6 @@ export default function ProductDetails() {
               </p>
             </div>
 
-            {/* ===== ACTIONS ===== */}
             <div className="mt-auto pt-8">
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
@@ -292,7 +281,6 @@ export default function ProductDetails() {
                 </button>
               </div>
 
-              {/* Back link */}
               <button
                 onClick={() => navigate(-1)}
                 className="mt-6 flex items-center gap-1.5 text-[13px] font-semibold text-stone-600 transition hover:text-emerald-800"

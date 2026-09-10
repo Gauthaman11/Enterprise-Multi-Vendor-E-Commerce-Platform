@@ -55,24 +55,24 @@ export default function ProductGrid() {
 
   if (loading)
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-[#f7f5f1]">
+      // 🆕 Changed to bg-white
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-white">
         <div className="relative h-14 w-14">
           <div className="absolute inset-0 rounded-full border-4 border-stone-200" />
           <div
-            className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent"
-            style={{ animation: "spin 0.9s linear infinite" }}
+            className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin"
           />
         </div>
         <p className="text-[14px] font-medium text-stone-500">
           Loading products...
         </p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
 
   if (error)
     return (
-      <div className="flex min-h-[60vh] items-center justify-center bg-[#f7f5f1] px-5">
+      // 🆕 Changed to bg-white
+      <div className="flex min-h-[60vh] items-center justify-center bg-white px-5">
         <div className="max-w-md rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-lg">
           <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-rose-600">
             <svg
@@ -98,7 +98,8 @@ export default function ProductGrid() {
     );
 
   return (
-    <div className="min-h-screen bg-[#f7f5f1] font-['Manrope',sans-serif]">
+    // 🆕 Changed to bg-white
+    <div className="min-h-screen bg-white font-['Manrope',sans-serif]">
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
         {/* Page header (UI-only) */}
         <div className="mb-8 text-center">
@@ -117,7 +118,8 @@ export default function ProductGrid() {
         <SearchBar />
 
         {products.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-white/60 p-16 text-center">
+          // 🆕 Changed bg-white/60 to bg-white for consistency
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-white p-16 text-center">
             <span className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-stone-100 text-stone-400">
               <svg
                 viewBox="0 0 24 24"

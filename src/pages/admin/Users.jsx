@@ -1,33 +1,45 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import {
-  getUsers,
-  enableUser,
-  disableUser,
-} from "../../api/adminApi";
+import api from "../../api/axios"; // 🆕 Use configured api instance (handles JWT & base URL)
+import { getUsers, enableUser, disableUser } from "../../api/adminApi";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadUsers(); }, []);
+  useEffect(() => { 
+    loadUsers(); 
+  }, []);
 
   async function loadUsers() {
     try {
+      setLoading(true);
       const response = await getUsers();
-      setUsers(response.data);
+      setUsers(response.data || []);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to load users:", err);
+    } finally {
+      setLoading(false);
     }
   }
 
   async function handleEnable(id) {
-    try { await enableUser(id); loadUsers(); }
-    catch (err) { console.error(err); }
+    try { 
+      await enableUser(id); 
+      loadUsers(); 
+    } catch (err) { 
+      console.error(err); 
+      alert("Failed to enable user");
+    }
   }
 
   async function handleDisable(id) {
-    try { await disableUser(id); loadUsers(); }
-    catch (err) { console.error(err); }
+    try { 
+      await disableUser(id); 
+      loadUsers(); 
+    } catch (err) { 
+      console.error(err); 
+      alert("Failed to disable user");
+    }
   }
 
   const roleMeta = {
@@ -39,8 +51,20 @@ export default function Users() {
 
   const enabledCount = users.filter((u) => u.enabled).length;
 
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+        <div className="relative h-12 w-12">
+          <div className="absolute inset-0 rounded-full border-4 border-stone-200" />
+          <div className="absolute inset-0 rounded-full border-4 border-sky-600 border-t-transparent animate-spin" />
+        </div>
+        <p className="text-[14px] font-medium text-stone-500">Loading users...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 font-['Manrope',sans-serif]">
       <style>{`
         @keyframes us-fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         .us-fade-up { animation: us-fade-up .5s cubic-bezier(.22, 1, .36, 1) both; }
@@ -53,8 +77,8 @@ export default function Users() {
           <h1 className="mt-2 font-['Fraunces',serif] text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
             User Management
           </h1>
-          <p className="mt-1.5 text-[14px] text-stone-500">
-            Control access and vendor commission rates across the marketplace.
+          <p className="mt-1.5 text-[15px] text-stone-500">
+            Control access and manage vendor commission rates across the marketplace.
           </p>
         </div>
 
@@ -77,16 +101,15 @@ export default function Users() {
         style={{ animationDelay: "100ms" }}
       >
         <div className="overflow-x-auto">
-          <table className="w-full text-[14px] text-left">
+          <table className="w-full text-left text-[14px]">
             <thead>
-              <tr className="border-b border-stone-200 bg-stone-50/70 text-[11px] font-bold uppercase tracking-[0.12em] text-stone-500">
-                <th className="px-5 py-3">Name</th>
-                <th className="px-5 py-3">Email</th>
-                <th className="px-5 py-3">Phone</th>
-                <th className="px-5 py-3">Role</th>
-                <th className="px-5 py-3">Commission</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="w-[180px] px-5 py-3 text-right">Action</th>
+              <tr className="border-b border-stone-200 bg-stone-50/80 text-[11px] font-bold uppercase tracking-[0.12em] text-stone-500">
+                <th className="px-6 py-4">User</th>
+                <th className="px-6 py-4">Contact</th>
+                <th className="px-6 py-4">Role</th>
+                <th className="px-6 py-4">Commission</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
 
@@ -99,30 +122,36 @@ export default function Users() {
                 };
 
                 return (
-                  <tr key={user.id} className="transition hover:bg-stone-50/40">
-                    <td className="px-5 py-4">
+                  <tr key={user.id} className="group transition-colors hover:bg-stone-50/60">
+                    {/* User Column: Combines Avatar, Name, and ID for better density */}
+                    <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-[13px] font-bold ${role.avatar}`}>
-                          {(user.name || "?").charAt(0).toUpperCase()}
+                          {(user.name || "U").charAt(0).toUpperCase()}
                         </span>
-                        <span className="font-['Fraunces',serif] text-[15px] font-semibold text-stone-900">
-                          {user.name}
-                        </span>
+                        <div>
+                          <p className="font-semibold text-stone-900">{user.name || "Unknown"}</p>
+                          <p className="mt-0.5 text-[12px] text-stone-500">ID: {user.id}</p>
+                        </div>
                       </div>
                     </td>
 
-                    <td className="px-5 py-4 text-stone-600">{user.email}</td>
-                    <td className="px-5 py-4 text-stone-600 tabular-nums">{user.phone || "-"}</td>
+                    {/* Contact Column: Combines Email and Phone */}
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-stone-900">{user.email}</p>
+                      <p className="mt-0.5 text-[12px] text-stone-500 tabular-nums">{user.phone || "No phone"}</p>
+                    </td>
 
-                    <td className="px-5 py-4">
+                    {/* Role Column */}
+                    <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] ring-1 ${role.badge}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${role.dot}`} />
-                        {user.role}
+                        {user.role.replace('_', ' ')}
                       </span>
                     </td>
 
-                    {/* 🆕 COMMISSION COLUMN */}
-                    <td className="px-5 py-4">
+                    {/* Commission Column */}
+                    <td className="px-6 py-4">
                       {user.role === "VENDOR" ? (
                         <CommissionInput user={user} onUpdated={loadUsers} />
                       ) : (
@@ -130,7 +159,8 @@ export default function Users() {
                       )}
                     </td>
 
-                    <td className="px-5 py-4">
+                    {/* Status Column */}
+                    <td className="px-6 py-4">
                       {user.enabled ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-emerald-700 ring-1 ring-emerald-600/15">
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -144,7 +174,8 @@ export default function Users() {
                       )}
                     </td>
 
-                    <td className="px-5 py-4">
+                    {/* Actions Column */}
+                    <td className="px-6 py-4 text-right">
                       <div className="flex justify-end">
                         {user.enabled ? (
                           <button
@@ -175,14 +206,18 @@ export default function Users() {
 
               {users.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="px-5 py-16 text-center">
-                    <span className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-stone-100 text-stone-400">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-6 w-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                      </svg>
-                    </span>
-                    <p className="font-['Fraunces',serif] text-[15px] font-semibold text-stone-900">No users found.</p>
-                    <p className="mt-0.5 text-[12px] text-stone-500">Registered users will appear here.</p>
+                  <td colSpan="6" className="px-6 py-16 text-center">
+                    <div className="mx-auto flex max-w-sm flex-col items-center">
+                      <span className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-stone-100 text-stone-400">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-7 w-7">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                        </svg>
+                      </span>
+                      <h3 className="font-['Fraunces',serif] text-xl font-semibold text-stone-900">No users found</h3>
+                      <p className="mt-1.5 text-[14px] text-stone-500">
+                        Registered users will appear here.
+                      </p>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -194,57 +229,64 @@ export default function Users() {
   );
 }
 
-// 🆕 COMMISSION INPUT COMPONENT
+// 🆕 POLISHED COMMISSION INPUT COMPONENT
 function CommissionInput({ user, onUpdated }) {
   const [rate, setRate] = useState(user.commissionRate != null ? user.commissionRate : 10);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
-  const token = localStorage.getItem("token") || localStorage.getItem("jwt");
+  const originalRate = user.commissionRate != null ? user.commissionRate : 10;
 
   async function save() {
     setSaving(true);
     try {
-      await axios.put(
-        `http://localhost:8080/api/admin/vendors/${user.id}/commission?rate=${rate}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      // 🆕 Uses the configured `api` instance (no hardcoded localhost, auto-attaches JWT)
+      await api.put(`/admin/vendors/${user.id}/commission?rate=${rate}`);
       setDirty(false);
       onUpdated();
     } catch (e) {
-      alert("Failed to update commission: " + (e.response?.data || e.message));
+      alert("Failed to update commission: " + (e.response?.data?.message || e.message));
     } finally {
       setSaving(false);
     }
   }
 
-  const originalRate = user.commissionRate != null ? user.commissionRate : 10;
-
   return (
-    <div className="flex items-center gap-1.5">
-      <input
-        type="number"
-        min="0"
-        max="100"
-        step="0.5"
-        value={rate}
-        onChange={(e) => {
-          setRate(e.target.value);
-          setDirty(Number(e.target.value) !== Number(originalRate));
-        }}
-        className={`w-16 rounded-lg border px-2 py-1 text-[13px] tabular-nums outline-none transition ${
-          dirty ? "border-amber-300 bg-amber-50" : "border-stone-200 bg-stone-50/60"
-        }`}
-      />
-      <span className="text-[12px] text-stone-500">%</span>
+    <div className="flex items-center gap-2">
+      <div className="relative flex items-center">
+        <input
+          type="number"
+          min="0"
+          max="100"
+          step="0.5"
+          value={rate}
+          onChange={(e) => {
+            setRate(e.target.value);
+            setDirty(Number(e.target.value) !== Number(originalRate));
+          }}
+          className={`w-16 rounded-lg border px-2.5 py-1.5 text-[13px] font-semibold tabular-nums outline-none transition-all focus:ring-2 ${
+            dirty 
+              ? "border-amber-300 bg-amber-50 text-amber-900 focus:border-amber-400 focus:ring-amber-400/20" 
+              : "border-stone-200 bg-stone-50 text-stone-700 focus:border-sky-500 focus:ring-sky-500/20"
+          }`}
+        />
+        <span className="pointer-events-none absolute right-2.5 text-[12px] font-semibold text-stone-400">%</span>
+      </div>
+      
       {dirty && (
         <button
           onClick={save}
           disabled={saving}
-          className="rounded bg-emerald-700 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+          className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition-all hover:bg-emerald-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-emerald-300"
         >
-          {saving ? "..." : "Save"}
+          {saving ? (
+            <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          ) : (
+            "Save"
+          )}
         </button>
       )}
     </div>

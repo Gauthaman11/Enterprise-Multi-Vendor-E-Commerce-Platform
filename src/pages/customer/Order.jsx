@@ -1,19 +1,17 @@
 import { useEffect, useState } from "react";
-// 🆕 ADDED: requestReturn to the imports
-import { getMyOrders, cancelOrder, requestReturn } from "../../api/customerApi";
+import { requestReturn } from "../../api/returnApi";
+import { getMyOrders, cancelOrder } from "../../api/customerApi";
 
 export default function Order() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [returnModalOpen, setReturnModalOpen] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState(null);
-  const [returnReason, setReturnReason] = useState("");
-    const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
   
+  // Return Modal State
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [returnReason, setReturnReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Move loadOrders up so it's cleanly accessible
   async function loadOrders() {
     try {
       const res = await getMyOrders();
@@ -25,8 +23,9 @@ export default function Order() {
       setLoading(false);
     }
   }
-    function openReturnModal(item) {
-    setSelectedItem(item);
+
+  function openReturnModal(item, orderId) {
+    setSelectedItem({ ...item, orderId });
     setReturnReason("");
     setIsReturnModalOpen(true);
   }
@@ -37,32 +36,14 @@ export default function Order() {
     
     setIsSubmitting(true);
     try {
-      // Dynamically import the API to avoid circular dependencies
-      const { requestReturn } = await import("../../api/returnApi");
       await requestReturn(selectedItem.orderId, selectedItem.id, returnReason);
-      
       alert("Return requested successfully!");
       setIsReturnModalOpen(false);
-      loadOrders(); // Refresh the list
+      loadOrders();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to request return");
     } finally {
       setIsSubmitting(false);
-    }
-  }
-
-  useEffect(() => { loadOrders(); }, []);
-
-  async function handleRequestReturn() {
-    if (!returnReason.trim()) return alert("Please provide a reason");
-    try {
-      await requestReturn(selectedOrderId, returnReason);
-      alert("Return requested successfully!");
-      setReturnModalOpen(false);
-      setReturnReason("");
-      loadOrders(); // Refresh the list
-    } catch (e) {
-      alert(e.response?.data?.message || "Failed to request return");
     }
   }
 
@@ -77,32 +58,35 @@ export default function Order() {
     }
   }
 
-  // 🆕 ADDED: SHIPPED status style for the new warehouse workflow
+  useEffect(() => { 
+    loadOrders(); 
+  }, []);
+
   const statusStyles = {
     DELIVERED: "bg-emerald-50 text-emerald-700 ring-emerald-600/15",
     CANCELLED: "bg-rose-50 text-rose-700 ring-rose-600/15",
     PENDING: "bg-amber-50 text-amber-700 ring-amber-600/15",
     CONFIRMED: "bg-sky-50 text-sky-700 ring-sky-600/15",
-    SHIPPED: "bg-purple-50 text-purple-700 ring-purple-600/15", // 🆕
+    SHIPPED: "bg-purple-50 text-purple-700 ring-purple-600/15",
+    REFUNDED: "bg-gray-100 text-gray-700 ring-gray-600/15", // Added for refunded status
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="flex min-h-[70vh] items-center justify-center bg-[#f7f5f1]">
+      <div className="flex min-h-[70vh] items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
           <div className="relative h-14 w-14">
             <div className="absolute inset-0 rounded-full border-4 border-stone-200" />
-            <div className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent" style={{ animation: "spin 0.9s linear infinite" }} />
+            <div className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
           </div>
-          <p className="text-[14px] font-medium text-stone-500">Loading orders...</p>
+          <p className="text-[14px] font-medium text-stone-500">Loading your orders...</p>
         </div>
       </div>
     );
+  }
 
   return (
-    <div className="min-h-screen bg-[#f7f5f1] font-['Manrope',sans-serif]">
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
+    <div className="min-h-screen bg-white font-['Manrope',sans-serif]">
       <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8 sm:py-12">
         {/* Header */}
         <div className="mb-8">
@@ -111,12 +95,12 @@ export default function Order() {
             My Orders
           </h1>
           <p className="mt-2 text-[15px] text-stone-500">
-            Track, review, and reorder everything you've purchased.
+            Track, review, and manage your recent purchases.
           </p>
         </div>
 
         {orders.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-stone-300 bg-white/60 p-16 text-center">
+          <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-16 text-center">
             <span className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-stone-100 text-stone-400">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-6 w-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m6 0v11.25m3-11.25v11.25m3-11.25v11.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
@@ -127,19 +111,21 @@ export default function Order() {
           </div>
         ) : (
           <div className="space-y-6">
-            {orders.map((order) => (
+            {orders.map((order, index) => (
               <article
-                key={order.orderId}
-                className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-[0_12px_32px_-12px_rgba(6,35,31,0.15)]"
+                key={index}
+                className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-lg"
               >
                 {/* Order header */}
-                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-200 bg-stone-50/70 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-200 bg-stone-50 p-5">
                   <div>
                     <p className="font-['Fraunces',serif] text-lg font-semibold text-stone-900">
-                      Order #{order.orderId}
+                      Order Details
                     </p>
                     <p className="mt-0.5 text-[13px] text-stone-500">
-                      Placed on {new Date(order.orderDate).toLocaleDateString()}
+                      Placed on {new Date(order.orderDate).toLocaleDateString('en-US', { 
+                        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' 
+                      })}
                     </p>
                   </div>
 
@@ -151,8 +137,8 @@ export default function Order() {
                     >
                       <span className={`h-1.5 w-1.5 rounded-full ${
                         order.status === 'DELIVERED' ? 'bg-emerald-500' :
-                        order.status === 'CANCELLED' ? 'bg-rose-500' :
-                        order.status === 'SHIPPED' ? 'bg-purple-500' : // 🆕
+                        order.status === 'CANCELLED' || order.status === 'REFUNDED' ? 'bg-rose-500' :
+                        order.status === 'SHIPPED' ? 'bg-purple-500' :
                         order.status === 'CONFIRMED' ? 'bg-sky-500' : 'bg-amber-500'
                       }`} />
                       {order.status.replace('_', ' ')}
@@ -165,40 +151,41 @@ export default function Order() {
 
                 {/* Items table */}
                 <div className="p-5">
-                  <table className="w-full text-[14px]">
-                    <thead>
-                      <tr className="border-b border-stone-200 text-[11px] font-bold uppercase tracking-[0.12em] text-stone-500">
-                        <th className="pb-2 text-left">Product</th>
-                        <th className="pb-2 text-left">Price</th>
-                        <th className="pb-2 text-left">Quantity</th>
-                        <th className="pb-2 text-right">Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {order.items?.map((item, index) => (
-  <tr key={index} className="border-b border-stone-100 last:border-0">
-    <td className="py-3 text-stone-800">{item.productName}</td>
-    <td className="py-3 text-stone-600 tabular-nums">₹{item.price}</td>
-    <td className="py-3 text-stone-600 tabular-nums">× {item.quantity}</td>
-    <td className="py-3 text-right font-semibold text-stone-900 tabular-nums">₹{item.subtotal}</td>
-    
-    {/* 🆕 ADD THIS COLUMN FOR RETURN BUTTON */}
-    <td className="py-3 text-right">
-      {order.status === 'DELIVERED' && (
-        <button 
-  onClick={() => openReturnModal({ ...item, orderId: order.orderId })}
-  className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-amber-700 transition hover:bg-amber-50"
->
-  Return Item
-</button>
-      )}
-    </td>
-  </tr>
-))}
-                    </tbody>
-                  </table>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[14px]">
+                      <thead>
+                        <tr className="border-b border-stone-200 text-[11px] font-bold uppercase tracking-[0.12em] text-stone-500">
+                          <th className="pb-2 text-left">Product</th>
+                          <th className="pb-2 text-left">Price</th>
+                          <th className="pb-2 text-left">Quantity</th>
+                          <th className="pb-2 text-right">Subtotal</th>
+                          <th className="pb-2 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {order.items?.map((item, idx) => (
+                          <tr key={idx} className="border-b border-stone-100 last:border-0">
+                            <td className="py-3 text-stone-800 font-medium">{item.productName}</td>
+                            <td className="py-3 text-stone-600 tabular-nums">₹{item.price}</td>
+                            <td className="py-3 text-stone-600 tabular-nums">× {item.quantity}</td>
+                            <td className="py-3 text-right font-semibold text-stone-900 tabular-nums">₹{item.subtotal}</td>
+                            <td className="py-3 text-right">
+                              {order.status === 'DELIVERED' && (
+                                <button 
+                                  onClick={() => openReturnModal(item, order.orderId)}
+                                  className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-amber-700 transition hover:bg-amber-50"
+                                >
+                                  Return Item
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
 
-                  {/* Only allow cancel if PENDING or CONFIRMED (not yet shipped) */}
+                  {/* Cancel Order Button */}
                   {(order.status === 'PENDING' || order.status === 'CONFIRMED') && (
                     <div className="mt-5 flex justify-end border-t border-stone-100 pt-4">
                       <button
@@ -218,12 +205,12 @@ export default function Order() {
           </div>
         )}
       </div>
-            {/* 🆕 CUSTOM RETURN MODAL OVERLAY */}
+
+      {/* Return Modal Overlay */}
       {isReturnModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-            {/* Modal Header */}
-            <div className="border-b border-stone-100 bg-stone-50/50 p-5">
+            <div className="border-b border-stone-100 bg-stone-50 p-5">
               <h3 className="font-['Fraunces',serif] text-xl font-semibold text-stone-900">
                 Request Return
               </h3>
@@ -232,7 +219,6 @@ export default function Order() {
               </p>
             </div>
 
-            {/* Modal Body */}
             <form onSubmit={handleSubmitReturn} className="p-5">
               <label className="mb-1.5 block text-[13px] font-semibold text-stone-700">
                 Reason for Return
@@ -243,10 +229,9 @@ export default function Order() {
                 placeholder="e.g., Item arrived damaged, wrong size, etc."
                 required
                 rows={4}
-                className="w-full rounded-xl border border-stone-200 bg-stone-50/60 p-3 text-[14px] text-stone-900 placeholder-stone-400 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
+                className="w-full rounded-xl border border-stone-200 bg-stone-50 p-3 text-[14px] text-stone-900 placeholder-stone-400 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
               />
 
-              {/* Modal Footer Buttons */}
               <div className="mt-5 flex justify-end gap-3">
                 <button
                   type="button"

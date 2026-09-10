@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#f7f5f1] font-['Manrope',sans-serif]">
+    // 🆕 Changed to bg-white
+    <div className="min-h-screen bg-white font-['Manrope',sans-serif]">
       {/* ============ HERO ============ */}
-      <section className="relative overflow-hidden border-b border-stone-200/60 bg-gradient-to-b from-white to-[#f7f5f1]">
+      {/* 🆕 Changed gradient to pure white for consistency */}
+      <section className="relative overflow-hidden border-b border-stone-200/60 bg-white">
         {/* Decorative orbs */}
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-emerald-200/40 blur-[100px]" />
@@ -33,15 +35,19 @@ export default function Home() {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link
-                to="/"
-                className="group inline-flex items-center gap-2 rounded-xl bg-emerald-800 px-5 py-3 text-[14px] font-semibold text-white shadow-lg shadow-emerald-800/25 transition-all hover:bg-emerald-900 active:scale-[0.99]"
-              >
-                Start shopping
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 transition-transform group-hover:translate-x-0.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
-              </Link>
+             <button
+              onClick={() => {
+                document.getElementById("shop-section")?.scrollIntoView({ 
+                  behavior: "smooth" 
+                });
+              }}
+              className="group inline-flex items-center gap-2 rounded-xl bg-emerald-800 px-5 py-3 text-[14px] font-semibold text-white shadow-lg shadow-emerald-800/25 transition-all hover:bg-emerald-900 active:scale-[0.99]"
+            >
+              Start shopping
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 transition-transform group-hover:translate-y-0.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+              </svg>
+            </button>
 
               <Link
                 to="/profile"
@@ -73,7 +79,7 @@ export default function Home() {
       </section>
 
       {/* ============ PRODUCT GRID ============ */}
-      <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
+      <div id="shop-section" className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
         <ProductGrid />
       </div>
     </div>

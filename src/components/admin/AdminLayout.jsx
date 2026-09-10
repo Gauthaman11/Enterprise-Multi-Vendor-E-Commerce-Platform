@@ -3,12 +3,15 @@ import AdminSidebar from "./AdminSidebar";
 
 export default function AdminLayout() {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-white">
       <AdminSidebar />
 
-      {/* ml-64 pushes content to the right of the fixed sidebar */}
-      <main className="ml-64 min-h-screen">
-        <Outlet />
+      {/* 🆕 FIXED: ml-0 on mobile, ml-64 ONLY on large screens */}
+      <main className="ml-0 min-h-screen lg:ml-64">
+        {/* Responsive page padding */}
+        <div className="p-4 sm:p-6 lg:p-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

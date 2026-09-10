@@ -26,7 +26,6 @@ export default function Cart() {
     }
   }
 
-  // 🆕 Discount helpers
   const unitPrice = (item) => {
     const d = item.discountPercentage || 0;
     return d > 0 ? Math.round(item.price * (1 - d / 100)) : Number(item.price);
@@ -65,11 +64,12 @@ export default function Cart() {
 
   if (loading)
     return (
-      <div className="flex min-h-[70vh] items-center justify-center bg-[#f7f5f1]">
+      // 🆕 Changed to bg-white
+      <div className="flex min-h-[70vh] items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
           <div className="relative h-14 w-14">
             <div className="absolute inset-0 rounded-full border-4 border-stone-200" />
-            <div className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent" style={{ animation: "spin 0.9s linear infinite" }} />
+            <div className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
           </div>
           <p className="text-[14px] font-medium text-stone-500">Loading cart...</p>
         </div>
@@ -77,9 +77,8 @@ export default function Cart() {
     );
 
   return (
-    <div className="min-h-screen bg-[#f7f5f1] font-['Manrope',sans-serif]">
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
+    // 🆕 Changed to bg-white
+    <div className="min-h-screen bg-white font-['Manrope',sans-serif]">
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
         {/* ===== HEADER ===== */}
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -283,17 +282,16 @@ export default function Cart() {
                   </span>
                 </div>
 
-                {/* ✅ ONLY ONE BUTTON: Proceed to Secure Payment */}
                 <button
-  onClick={() => navigate("/checkout")}
-  disabled={items.length === 0}
-  className="group mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-800 py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-emerald-800/25 transition-all duration-200 hover:bg-emerald-900 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-stone-300 disabled:shadow-none"
->
-  Proceed to Checkout
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 transition-transform group-hover:translate-x-0.5">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-  </svg>
-</button>
+                  onClick={() => navigate("/checkout")}
+                  disabled={items.length === 0}
+                  className="group mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-800 py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-emerald-800/25 transition-all duration-200 hover:bg-emerald-900 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-stone-300 disabled:shadow-none"
+                >
+                  Proceed to Checkout
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 transition-transform group-hover:translate-x-0.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </button>
 
                 <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-stone-400">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-3.5 w-3.5">

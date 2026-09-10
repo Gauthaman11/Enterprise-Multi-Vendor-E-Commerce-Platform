@@ -1,12 +1,12 @@
-import { useState } from "react"; // UI-only: password visibility toggles
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { register as registerUser } from "../../api/authApi";
 
 export default function RegisterForm() {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false); // UI-only
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // UI-only
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     register,
@@ -28,7 +28,7 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full overflow-hidden bg-[#f7f5f1] font-['Manrope',sans-serif]">
+    <div className="relative flex w-full overflow-hidden bg-[#f7f5f1] font-['Manrope',sans-serif]">
       {/* Scoped UI animations */}
       <style>{`
         @keyframes rf-fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
@@ -103,7 +103,7 @@ export default function RegisterForm() {
           >
             <div className="rf-float rounded-xl border border-white/10 bg-white/[0.06] p-4 shadow-xl shadow-black/20 backdrop-blur-sm">
               <div className="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-300/20">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4.5 w-4.5 h-5 w-5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                 </svg>
               </div>
@@ -118,7 +118,7 @@ export default function RegisterForm() {
               style={{ animationDelay: "1.2s" }}
             >
               <div className="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-amber-400/15 text-amber-300 ring-1 ring-amber-300/20">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4.5 w-4.5 h-5 w-5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -133,7 +133,7 @@ export default function RegisterForm() {
               style={{ animationDelay: "2.4s" }}
             >
               <div className="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-sky-400/15 text-sky-300 ring-1 ring-sky-300/20">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4.5 w-4.5 h-5 w-5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
                 </svg>
               </div>
@@ -172,7 +172,7 @@ export default function RegisterForm() {
       </aside>
 
       {/* ================= RIGHT — FORM ================= */}
-      <main className="relative flex flex-1 flex-col items-center justify-center px-5 py-10 sm:px-8">
+      <main className="relative flex flex-1 flex-col items-center justify-center px-4 py-6 sm:px-8 sm:py-10">
         {/* Ambient background */}
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           <div className="absolute right-[-10%] top-[-15%] h-[420px] w-[420px] rounded-full bg-emerald-200/40 blur-[110px]" />
@@ -180,7 +180,7 @@ export default function RegisterForm() {
         </div>
 
         {/* Mobile-only brand */}
-        <div className="rf-fade-up relative z-10 mb-8 flex items-center gap-2.5 lg:hidden">
+        <div className="rf-fade-up relative z-10 mb-6 flex items-center gap-2.5 lg:hidden">
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-md shadow-emerald-900/20">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5 text-white">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
@@ -192,9 +192,9 @@ export default function RegisterForm() {
         </div>
 
         <div className="rf-fade-up relative z-10 w-full max-w-md" style={{ animationDelay: "100ms" }}>
-          <div className="rounded-2xl border border-stone-200/80 bg-white p-7 shadow-[0_24px_60px_-24px_rgba(6,35,31,0.28)] sm:p-9">
+          <div className="rounded-2xl border border-stone-200/80 bg-white p-6 shadow-[0_24px_60px_-24px_rgba(6,35,31,0.28)] sm:p-9">
             {/* Card header */}
-            <div className="mb-8">
+            <div className="mb-6">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700 ring-1 ring-amber-600/15">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -202,10 +202,10 @@ export default function RegisterForm() {
                 New merchant
               </span>
 
-              <h1 className="mt-4 font-['Fraunces',serif] text-[1.9rem] font-semibold tracking-tight text-stone-900">
+              <h1 className="mt-3 font-['Fraunces',serif] text-2xl font-semibold tracking-tight text-stone-900 sm:text-[1.9rem]">
                 Join ShopStack
               </h1>
-              <p className="mt-1.5 text-sm text-stone-500">
+              <p className="mt-1 text-sm text-stone-500">
                 Create your account in under 60 seconds
               </p>
             </div>
@@ -230,7 +230,7 @@ export default function RegisterForm() {
                     {...register("name", {
                       required: "Name is required",
                     })}
-                    className="peer w-full rounded-xl border border-stone-200 bg-stone-50/60 py-3 pl-11 pr-4 text-[15px] text-stone-900 placeholder-stone-400 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
+                    className="peer w-full rounded-xl border border-stone-200 bg-stone-50/60 py-2.5 pl-11 pr-4 text-[15px] text-stone-900 placeholder-stone-400 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10 sm:py-3"
                   />
                 </div>
 
@@ -264,7 +264,7 @@ export default function RegisterForm() {
                     {...register("email", {
                       required: "Email is required",
                     })}
-                    className="peer w-full rounded-xl border border-stone-200 bg-stone-50/60 py-3 pl-11 pr-4 text-[15px] text-stone-900 placeholder-stone-400 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
+                    className="peer w-full rounded-xl border border-stone-200 bg-stone-50/60 py-2.5 pl-11 pr-4 text-[15px] text-stone-900 placeholder-stone-400 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10 sm:py-3"
                   />
                 </div>
 
@@ -302,7 +302,7 @@ export default function RegisterForm() {
                         message: "Minimum 6 characters",
                       },
                     })}
-                    className="peer w-full rounded-xl border border-stone-200 bg-stone-50/60 py-3 pl-11 pr-12 text-[15px] text-stone-900 placeholder-stone-400 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
+                    className="peer w-full rounded-xl border border-stone-200 bg-stone-50/60 py-2.5 pl-11 pr-12 text-[15px] text-stone-900 placeholder-stone-400 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10 sm:py-3"
                   />
 
                   <button
@@ -354,7 +354,7 @@ export default function RegisterForm() {
                     {...register("confirmPassword", {
                       validate: (value) => value === password || "Passwords do not match",
                     })}
-                    className="peer w-full rounded-xl border border-stone-200 bg-stone-50/60 py-3 pl-11 pr-12 text-[15px] text-stone-900 placeholder-stone-400 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
+                    className="peer w-full rounded-xl border border-stone-200 bg-stone-50/60 py-2.5 pl-11 pr-12 text-[15px] text-stone-900 placeholder-stone-400 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10 sm:py-3"
                   />
 
                   <button
@@ -402,7 +402,7 @@ export default function RegisterForm() {
                   <select
                     id="role"
                     {...register("role")}
-                    className="peer w-full appearance-none rounded-xl border border-stone-200 bg-stone-50/60 py-3 pl-11 pr-11 text-[15px] text-stone-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10"
+                    className="peer w-full appearance-none rounded-xl border border-stone-200 bg-stone-50/60 py-2.5 pl-11 pr-11 text-[15px] text-stone-900 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-600/10 sm:py-3"
                   >
                     <option value="CUSTOMER">Customer</option>
                     <option value="VENDOR">Vendor</option>
@@ -424,7 +424,7 @@ export default function RegisterForm() {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="group w-full rounded-xl bg-emerald-800 py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-emerald-800/25 transition-all duration-200 hover:bg-emerald-900 hover:shadow-xl hover:shadow-emerald-900/25 active:scale-[0.99]"
+                  className="group w-full rounded-xl bg-emerald-800 py-3 text-[15px] font-semibold text-white shadow-lg shadow-emerald-800/25 transition-all duration-200 hover:bg-emerald-900 hover:shadow-xl hover:shadow-emerald-900/25 active:scale-[0.99]"
                 >
                   <span className="flex items-center justify-center gap-2">
                     Create Account
@@ -452,7 +452,7 @@ export default function RegisterForm() {
           </div>
 
           {/* Terms footer */}
-          <p className="mt-6 text-center text-xs text-stone-400">
+          <p className="mt-4 text-center text-xs text-stone-400">
             By creating an account, you agree to our{" "}
             <a href="#" className="underline transition hover:text-stone-600">
               Terms
