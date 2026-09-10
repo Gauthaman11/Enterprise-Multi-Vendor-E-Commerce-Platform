@@ -15,6 +15,8 @@ import com.javaenterprise.returnRequest.entity.ReturnStatus;
 import com.javaenterprise.returnRequest.repository.ReturnRequestRepository;
 import com.javaenterprise.user.entity.User;
 import com.javaenterprise.user.repository.UserRepository;
+import com.javaenterprise.warehouse.entity.WarehouseInventory;
+import com.javaenterprise.warehouse.repository.WarehouseInventoryRepository; // 🆕 Added
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ public class ReturnService {
     private final UserRepository userRepo;
     private final PaymentRepository paymentRepo;
     private final ProductRepository productRepo;
+    private final WarehouseInventoryRepository warehouseInventoryRepo; // 🆕 Added
 
     // 1. CUSTOMER REQUESTS RETURN
     @Transactional
@@ -39,17 +42,14 @@ public class ReturnService {
         User user = userRepo.findByEmail(auth.getName()).orElseThrow(() -> new RuntimeException("User not found"));
         Order order = orderRepo.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // VALIDATION 1: Order belongs to customer
         if (!order.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("Unauthorized: Order does not belong to you.");
         }
 
-        // VALIDATION 2: Order must be DELIVERED
         if (order.getStatus() != OrderStatus.DELIVERED) {
             throw new RuntimeException("Returns can only be requested for delivered orders.");
         }
 
-        // VALIDATION 3: Prevent duplicate returns
         if (returnRepo.findByOrderItemId(orderItemId).isPresent()) {
             throw new RuntimeException("A return request already exists for this item.");
         }
@@ -60,28 +60,25 @@ public class ReturnService {
                 .orderId(orderId)
                 .orderItemId(orderItemId)
                 .userId(user.getId())
-                .customerName(user.getName())          // 🆕 Save customer name
+                .customerName(user.getName())
                 .productName(item.getProduct().getName())
                 .reason(reason)
                 .status(ReturnStatus.REQUESTED)
-                .refundAmount(item.getSubtotal()) // Refund the subtotal of that specific item
+                .refundAmount(item.getSubtotal())
                 .build();
 
         return returnRepo.save(req);
     }
 
-    // 2. GET CUSTOMER'S RETURNS (This was the missing method!)
     public List<ReturnRequest> getMyReturns(Authentication auth) {
         User user = userRepo.findByEmail(auth.getName()).orElseThrow(() -> new RuntimeException("User not found"));
         return returnRepo.findByUserId(user.getId());
     }
 
-    // 3. ADMIN GETS ALL REQUESTS
     public List<ReturnRequest> getAllReturns() {
         return returnRepo.findAllByOrderByCreatedAtDesc();
     }
 
-    // 4. ADMIN APPROVES / REJECTS / MARKS RECEIVED
     @Transactional
     public ReturnRequest updateStatus(Long returnId, ReturnStatus newStatus, boolean restock) {
         ReturnRequest req = returnRepo.findById(returnId).orElseThrow(() -> new RuntimeException("Return request not found"));
@@ -94,7 +91,7 @@ public class ReturnService {
         return returnRepo.save(req);
     }
 
-    // 5. PROCESS REFUND & UPDATE INVENTORY (The Final Step)
+    // 5. PROCESS REFUND & UPDATE INVENTORY (FIXED)
     @Transactional
     public void processRefund(Long returnId) {
         ReturnRequest req = returnRepo.findById(returnId).orElseThrow(() -> new RuntimeException("Return request not found"));
@@ -107,9 +104,23 @@ public class ReturnService {
         if (req.isRestock()) {
             OrderItem item = orderItemRepo.findById(req.getOrderItemId()).orElseThrow();
             Product product = item.getProduct();
-            // Add back to main product stock
+
+            // 🆕 1. Update global product stock (for vendor dashboard)
             product.setStock(product.getStock() + item.getQuantity());
             productRepo.save(product);
+
+            // 🆕 2. Update WAREHOUSE inventory (for Admin Warehouse dashboard)
+            // The item was originally shipped from this warehouse, so we restock it back there
+            if (item.getWarehouse() != null) {
+                WarehouseInventory inv = warehouseInventoryRepo
+                        .findByProductIdAndWarehouseId(product.getId(), item.getWarehouse().getId())
+                        .orElse(null);
+
+                if (inv != null) {
+                    inv.setTotalStock(inv.getTotalStock() + item.getQuantity()); // 98 → 100
+                    warehouseInventoryRepo.save(inv);
+                }
+            }
         }
 
         // B. Update Payment Status

@@ -1,8 +1,11 @@
 package com.javaenterprise.warehouse.service;
 
 import com.javaenterprise.order.entity.FulfillmentStatus;
+import com.javaenterprise.order.entity.Order;
 import com.javaenterprise.order.entity.OrderItem;
-import com.javaenterprise.order.repository.OrderItemRepository; // Make sure this exists
+import com.javaenterprise.order.entity.OrderStatus;
+import com.javaenterprise.order.repository.OrderItemRepository;
+import com.javaenterprise.order.repository.OrderRepository; // 🆕 Added
 import com.javaenterprise.user.entity.User;
 import com.javaenterprise.user.repository.UserRepository;
 import com.javaenterprise.warehouse.entity.WarehouseInventory;
@@ -19,6 +22,7 @@ public class WarehouseFulfillmentService {
     private final OrderItemRepository orderItemRepository;
     private final UserRepository userRepository;
     private final WarehouseInventoryRepository inventoryRepository;
+    private final OrderRepository orderRepository; // 🆕 Added
 
     @Transactional
     public OrderItem pickItem(Long orderItemId, Authentication auth) {
@@ -41,7 +45,7 @@ public class WarehouseFulfillmentService {
             throw new RuntimeException("Item must be in PICKED status to be packed.");
         }
 
-        // 🆕 Deduct from physical inventory when packed
+        // Deduct from physical inventory when packed
         WarehouseInventory inv = inventoryRepository.findByProductIdAndWarehouseId(
                 item.getProduct().getId(), item.getWarehouse().getId()).orElseThrow();
         inv.setTotalStock(inv.getTotalStock() - item.getQuantity());
@@ -60,8 +64,16 @@ public class WarehouseFulfillmentService {
         if (item.getFulfillmentStatus() != FulfillmentStatus.PACKED) {
             throw new RuntimeException("Item must be in PACKED status to be marked ready.");
         }
+
         item.setFulfillmentStatus(FulfillmentStatus.READY_FOR_SHIPMENT);
-        return orderItemRepository.save(item);
+        orderItemRepository.save(item);
+
+        // 🆕 Also update the main Order status to SHIPPED so the Vendor sees it!
+        Order order = item.getOrder();
+        order.setStatus(OrderStatus.SHIPPED);
+        orderRepository.save(order);
+
+        return item;
     }
 
     private OrderItem getOrderItemAndVerifyWarehouse(Long orderItemId, User staff) {
