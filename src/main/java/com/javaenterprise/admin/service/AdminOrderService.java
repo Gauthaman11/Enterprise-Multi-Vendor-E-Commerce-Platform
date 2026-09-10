@@ -26,9 +26,7 @@ public class AdminOrderService {
     private final WarehouseRepository warehouseRepository;
     private final WarehouseInventoryRepository warehouseInventoryRepository;
 
-    // 🆕 Fetch all orders formatted for the Admin UI
     public List<Map<String, Object>> getAllOrdersForAdmin() {
-        // Make sure to add this method to OrderRepository (see Step 3)
         List<Order> orders = orderRepository.findAllByOrderByOrderDateDesc();
 
         return orders.stream().map(order -> {
@@ -38,7 +36,19 @@ public class AdminOrderService {
             map.put("totalAmount", order.getTotalAmount());
             map.put("status", order.getStatus().name());
 
-            // Check if any item has a warehouse assigned
+            List<Map<String, Object>> itemsList = order.getItems().stream().map(item -> {
+                Map<String, Object> itemMap = new HashMap<>();
+                itemMap.put("id", item.getId());
+                itemMap.put("productName", item.getProduct().getName());
+                itemMap.put("quantity", item.getQuantity());
+                itemMap.put("price", item.getPrice());
+                itemMap.put("subtotal", item.getSubtotal());
+                itemMap.put("fulfillmentStatus", item.getFulfillmentStatus() != null ? item.getFulfillmentStatus().name() : null);
+                return itemMap;
+            }).collect(Collectors.toList());
+
+            map.put("items", itemsList);
+
             if (order.getItems() != null && !order.getItems().isEmpty()) {
                 OrderItem firstItem = order.getItems().iterator().next();
                 if (firstItem.getWarehouse() != null) {
@@ -70,22 +80,36 @@ public class AdminOrderService {
                 .orElseThrow(() -> new RuntimeException("Warehouse not found"));
 
         for (OrderItem item : order.getItems()) {
+            // 🆕 1. Try to find existing inventory, but DON'T throw an error if it's missing
             WarehouseInventory inventory = warehouseInventoryRepository
                     .findByProductIdAndWarehouseId(item.getProduct().getId(), warehouseId)
-                    .orElseThrow(() -> new RuntimeException("Product not found in the selected warehouse"));
+                    .orElse(null);
 
+            // 🆕 2. If it doesn't exist, AUTO-CREATE it using the product's current stock!
+            if (inventory == null) {
+                inventory = new WarehouseInventory();
+                inventory.setProduct(item.getProduct());
+                inventory.setWarehouse(warehouse);
+                inventory.setTotalStock(item.getProduct().getStock()); // Sync with product stock
+                inventory.setAllocatedStock(0);
+            }
+
+            // 3. Check available stock
             int availableStock = inventory.getTotalStock() - inventory.getAllocatedStock();
             if (availableStock < item.getQuantity()) {
                 throw new RuntimeException("Insufficient available stock in the selected warehouse for: " + item.getProduct().getName());
             }
 
+            // 4. Assign warehouse and update status
             item.setWarehouse(warehouse);
             item.setFulfillmentStatus(FulfillmentStatus.ALLOCATED);
 
+            // 5. Reserve the stock
             inventory.setAllocatedStock(inventory.getAllocatedStock() + item.getQuantity());
             warehouseInventoryRepository.save(inventory);
         }
 
+        // 6. Move order to CONFIRMED
         order.setStatus(OrderStatus.CONFIRMED);
         orderRepository.save(order);
     }
