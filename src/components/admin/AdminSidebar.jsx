@@ -1,10 +1,12 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../../redux/authSlice";
+import { useState } from "react"; // 🆕 Added for mobile state
 
 export default function AdminSidebar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false); // 🆕 Mobile toggle state
 
   const linkStyle = ({ isActive }) =>
     `group flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 ${
@@ -22,12 +24,44 @@ export default function AdminSidebar() {
 
   return (
     <>
+      {/* 🆕 1. MOBILE HAMBURGER BUTTON (Only visible on mobile) */}
+      <button 
+        onClick={() => setIsOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg border border-stone-200 text-stone-700 hover:bg-stone-50 transition"
+      >
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      {/* 🆕 2. MOBILE OVERLAY (Dark background when menu is open) */}
+      {isOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm transition-opacity"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
       <style>{`
         @keyframes as-fade-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
         .as-fade-in { animation: as-fade-in .4s cubic-bezier(.22, 1, .36, 1) both; }
       `}</style>
 
-      <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col overflow-hidden bg-[#06231f] font-['Manrope',sans-serif] shadow-2xl shadow-emerald-950/40">
+      {/* 🆕 3. SIDEBAR WITH SLIDE ANIMATION */}
+      <aside className={`
+        fixed left-0 top-0 z-40 flex h-screen w-64 flex-col overflow-hidden bg-[#06231f] font-['Manrope',sans-serif] shadow-2xl shadow-emerald-950/40
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
+        md:translate-x-0
+      `}>
+        
+        {/* 🆕 4. MOBILE CLOSE BUTTON */}
+        <button onClick={() => setIsOpen(false)} className="md:hidden absolute top-5 right-4 text-white/70 hover:text-white z-50">
+           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+           </svg>
+        </button>
+
         {/* Decorative background */}
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-sky-500/15 blur-[80px]" />
@@ -133,7 +167,6 @@ export default function AdminSidebar() {
               <span className="text-[14px] font-medium">Users</span>
             </NavLink>
 
-            {/* 🆕 ADDED ORDERS LINK HERE */}
             <NavLink to="/admin/orders" className={linkStyle}>
               <span className={iconWrap}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">

@@ -110,7 +110,7 @@ export default function VendorOrders() {
     );
   }
 
-      function Actions({ row }) {
+  function Actions({ row }) {
     const busy = savingKey !== null;
 
     // Terminal states - no actions needed
@@ -158,13 +158,14 @@ export default function VendorOrders() {
       );
     }
 
+    // 🆕 FIXED: Vendor has read-only visibility for returns. Admin handles the refund.
     if (row.status === "RETURN_REQUESTED") {
       return (
         <div className="flex flex-col items-end gap-1">
-          <span className="text-[11px] font-semibold text-amber-700">Return Requested!</span>
-          <button disabled={busy} onClick={() => changeStatus(row.orderId, "REFUNDED")} className="rounded-lg bg-emerald-700 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50">
-            Approve Refund
-          </button>
+          <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold uppercase ring-1 ring-amber-600/15 text-amber-700">
+            Return Requested
+          </span>
+          <span className="text-[11px] text-stone-500">Admin will process refund</span>
         </div>
       );
     }
