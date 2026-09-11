@@ -34,9 +34,10 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
+        // ✅ OFFICIAL SPRING SECURITY 6 WAY: Pass passwordEncoder to constructor
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(passwordEncoder());
+        authProvider.setUserDetailsService(userDetailsService);
+        return authProvider;
     }
 
     @Bean
@@ -47,27 +48,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ Explicit CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ 1. Allow CORS preflight (OPTIONS) requests globally
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // ✅ 2. Public endpoints (No token required)
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/oauth2/**",
                                 "/api/public/**",
                                 "/api/products/**",
-                                "/error" // ✅ ADD THIS to unmask hidden 500/404 errors!
+                                "/error"
                         ).permitAll()
-
-                        // ✅ 3. Role-based endpoints (Accepts both "ROLE_X" and "X")
                         .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
                         .requestMatchers("/api/vendor/**").hasAnyAuthority("VENDOR", "ROLE_VENDOR")
                         .requestMatchers("/api/warehouse/**").hasAnyAuthority("WAREHOUSE_STAFF", "ROLE_WAREHOUSE_STAFF")
-
-                        // ✅ 4. Customer endpoints
                         .requestMatchers(
                                 "/api/customer/**",
                                 "/api/cart/**",
@@ -75,7 +69,6 @@ public class SecurityConfig {
                                 "/api/orders/**",
                                 "/api/profile/**"
                         ).hasAnyAuthority("CUSTOMER", "ROLE_CUSTOMER")
-
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -91,30 +84,21 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(
                 List.of(
-                        "http://localhost:5173",  // Vite dev server
-                        "http://localhost:3000",  // ✅ Docker/nginx frontend
-                        "http://127.0.0.1:3000",  // ✅ Alternative Docker address
+                        "http://localhost:5173",
+                        "http://localhost:3000",
+                        "http://127.0.0.1:3000",
                         "http://127.0.0.1:5173",
-                        "http://100.53.133.156"// ✅ Alternative dev address
+                        "http://100.53.133.156" // ✅ Allows your live EC2 frontend to talk to the backend
                 )
         );
 
-        configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH") // Added PATCH just in case
-        );
-
-        configuration.setAllowedHeaders(
-                List.of("*")
-        );
-
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
-
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
 
         return source;
     }
-
 }
