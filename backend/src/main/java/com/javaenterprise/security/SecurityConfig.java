@@ -94,7 +94,8 @@ public class SecurityConfig {
                         "http://localhost:5173",  // Vite dev server
                         "http://localhost:3000",  // ✅ Docker/nginx frontend
                         "http://127.0.0.1:3000",  // ✅ Alternative Docker address
-                        "http://127.0.0.1:5173"   // ✅ Alternative dev address
+                        "http://127.0.0.1:5173",
+                        "http://100.53.133.156"// ✅ Alternative dev address
                 )
         );
 
