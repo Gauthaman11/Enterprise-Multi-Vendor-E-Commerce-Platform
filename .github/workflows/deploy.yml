@@ -56,7 +56,7 @@ jobs:
             sudo mkdir -p /opt/shopstack && sudo chown ubuntu:ubuntu /opt/shopstack
             cd /opt/shopstack
             
-            # 3. Create docker-compose.yml (Uses $ECR_REGISTRY variable)
+            # 3. Create docker-compose.yml
             cat << EOF > docker-compose.yml
             services:
               postgres:
@@ -78,6 +78,8 @@ jobs:
               backend:
                 image: $ECR_REGISTRY/shopstack-backend:latest
                 container_name: shopstack-backend
+                ports:
+                  - "8080:8080"
                 environment:
                   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/shopstack
                   SPRING_DATASOURCE_USERNAME: shopstack
