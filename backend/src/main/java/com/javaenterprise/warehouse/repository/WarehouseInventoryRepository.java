@@ -2,7 +2,7 @@ package com.javaenterprise.warehouse.repository;
 
 import com.javaenterprise.warehouse.entity.Warehouse;
 import com.javaenterprise.warehouse.entity.WarehouseInventory;
-import org.jspecify.annotations.Nullable;
+import org.springframework.lang.Nullable; // ✅ FIXED IMPORT
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
