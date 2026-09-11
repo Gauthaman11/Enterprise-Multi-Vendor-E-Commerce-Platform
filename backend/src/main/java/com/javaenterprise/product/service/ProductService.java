@@ -26,30 +26,33 @@ public class ProductService {
     private final UserRepository userRepository;
 
     public ProductResponse add(ProductRequest request,
-                               Authentication authentication){
+                           Authentication authentication) {
 
-        User vendor = userRepository.findByEmail(authentication.getName())
-                .orElseThrow();
+    User vendor = userRepository.findByEmail(authentication.getName())
+            .orElseThrow();
 
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow();
+    Category category = categoryRepository.findById(request.getCategoryId())
+            .orElseThrow();
 
-        Product product = Product.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .price(request.getPrice())
-                .stock(request.getStock())
-                .imageUrl(request.getImageUrl())
-                .category(category)
-                .vendor(vendor)
-                .active(true)
-                .status(ProductStatus.PENDING)
-                .build();
+    Product product = Product.builder()
+            .name(request.getName())
+            .description(request.getDescription())
+            .price(request.getPrice())
+            .stock(request.getStock())
+            .imageUrl(request.getImageUrl())
+            .category(category)
+            .vendor(vendor)
+            .active(true)
+            .status(ProductStatus.PENDING)
+            .discountPercentage(0)   
+            .build();
 
-        productRepository.save(product);
-        System.out.println("Saved successfully");
-        return map(product);
-    }
+    productRepository.save(product);
+
+    System.out.println("Saved successfully");
+
+    return map(product);
+}
 
     public List<ProductResponse> getAll() {
 
