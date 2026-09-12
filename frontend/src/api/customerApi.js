@@ -1,80 +1,73 @@
-import api from "../api/axios"; 
+import api from "./axios"; 
 
-
-
-const getHeaders = () => {
-  const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("jwt") ||
-    localStorage.getItem("accessToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+// Note: We do NOT need getHeaders() anymore! 
+// Your axios.js interceptor automatically adds the Bearer token to EVERY request.
+// Also, axios.js already sets the baseURL to '/api', so we just use the path.
 
 // ---------- Products ----------
 export const getProducts = () => 
-  api.get(`${BASE_URL}/products`);
+  api.get("/products");
 
 export const getProductById = (id) => 
-  api.get(`${BASE_URL}/products/${id}`, { headers: getHeaders() });
+  api.get(`/products/${id}`);
 
 // ---------- Wishlist ----------
 export const getWishlist = () =>
-  api.get(`${BASE_URL}/customer/wishlist`, { headers: getHeaders() });
+  api.get("/customer/wishlist");
 
 export const addToWishlist = (productId) =>
-  api.post(`${BASE_URL}/customer/wishlist`, { productId }, { headers: getHeaders() });
+  api.post("/customer/wishlist", { productId });
 
 export const removeFromWishlist = (productId) =>
-  api.delete(`${BASE_URL}/customer/wishlist/${productId}`, { headers: getHeaders() });
+  api.delete(`/customer/wishlist/${productId}`);
 
 // ---------- Cart ----------
 export const getCart = () =>
-  api.get(`${BASE_URL}/customer/cart`, { headers: getHeaders() });
+  api.get("/customer/cart");
 
 export const addToCart = (productId, quantity = 1) =>
-  api.post(`${BASE_URL}/customer/cart`, { productId, quantity }, { headers: getHeaders() });
+  api.post("/customer/cart", { productId, quantity });
 
 export const updateCartQty = (id, quantity) =>
-  api.put(`${BASE_URL}/customer/cart/${id}`, { productId: id, quantity }, { headers: getHeaders() });
+  api.put(`/customer/cart/${id}`, { productId: id, quantity });
 
 export const removeCartItem = (id) =>
-  api.delete(`${BASE_URL}/customer/cart/${id}`, { headers: getHeaders() });
+  api.delete(`/customer/cart/${id}`);
 
 export const clearCart = () =>
-  api.delete(`${BASE_URL}/customer/cart`, { headers: getHeaders() });
+  api.delete("/customer/cart");
 
 // ---------- Orders ----------
 export const getMyOrders = () => 
-  api.get(`${BASE_URL}/customer/orders`, { headers: getHeaders() });
+  api.get("/customer/orders");
 
 export const cancelOrder = (id) => 
-  api.put(`${BASE_URL}/customer/orders/${id}/cancel`, {}, { headers: getHeaders() });
+  api.put(`/customer/orders/${id}/cancel`, {});
 
 // ---------- Profile ----------
 export const getProfile = () => 
-  api.get(`${BASE_URL}/customer/profile`, { headers: getHeaders() });
+  api.get("/customer/profile");
 
 export const updateProfile = (data) => 
-  api.put(`${BASE_URL}/customer/profile`, data, { headers: getHeaders() });
+  api.put("/customer/profile", data);
 
 // ---------- ADDRESS MANAGEMENT ----------
 export const getAddresses = () =>
-  api.get(`${BASE_URL}/customer/address`, { headers: getHeaders() });
+  api.get("/customer/address");
 
 export const addAddress = (address) =>
-  api.post(`${BASE_URL}/customer/address`, address, { headers: getHeaders() });
+  api.post("/customer/address", address);
 
 export const updateAddress = (id, address) =>
-  api.put(`${BASE_URL}/customer/address/${id}`, address, { headers: getHeaders() });
+  api.put(`/customer/address/${id}`, address);
 
 export const deleteAddress = (id) =>
-  api.delete(`${BASE_URL}/customer/address/${id}`, { headers: getHeaders() });
+  api.delete(`/customer/address/${id}`);
 
 export const setDefaultAddress = (id) =>
-  api.put(`${BASE_URL}/customer/address/${id}/default`, {}, { headers: getHeaders() });
+  api.put(`/customer/address/${id}/default`, {});
 
-  export const validateCoupon = (code, orderTotal) =>
-  api.get(`${BASE_URL}/customer/coupons/validate`, {
-    params: { code, orderTotal },
-    headers: getHeaders(),
+export const validateCoupon = (code, orderTotal) =>
+  api.get("/customer/coupons/validate", {
+    params: { code, orderTotal }
   });
