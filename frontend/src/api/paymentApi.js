@@ -1,31 +1,19 @@
 import api from "./axios";
 
+// Note: No need for getHeaders() or BASE_URL! 
+// The './axios' file handles the baseURL ('/api') and the Bearer token automatically.
 
-
-const getHeaders = () => {
-  const token =
-    localStorage.getItem("token") ||
-    localStorage.getItem("jwt") ||
-    localStorage.getItem("accessToken");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
-
-
-  export const initiatePayment = (couponCode) =>
-  api.post(`${BASE_URL}/customer/payments/initiate`, {}, {
+export const initiatePayment = (couponCode) =>
+  api.post("/customer/payments/initiate", {}, {
     params: couponCode ? { couponCode } : {},
-    headers: getHeaders(),
   });
 
 export const verifyPayment = (payload, addressId, couponCode) =>
-  api.post(`${BASE_URL}/customer/payments/verify`, payload, {
+  api.post("/customer/payments/verify", payload, {
     params: { addressId, ...(couponCode ? { couponCode } : {}) },
-    headers: getHeaders(),
   });
 
 export const placeCodOrder = (addressId, couponCode) =>
-  api.post(`${BASE_URL}/customer/payments/cod`, {}, {
+  api.post("/customer/payments/cod", {}, {
     params: { addressId, ...(couponCode ? { couponCode } : {}) },
-    headers: getHeaders(),
   });
