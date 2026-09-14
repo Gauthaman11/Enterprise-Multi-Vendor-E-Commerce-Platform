@@ -234,6 +234,42 @@ public class OrderService {
         order.setReturnReason(reason);
         orderRepository.save(order);
     }
+        // ✅ NEW: Mark Order as Delivered & Trigger Email
+    @Transactional
+    public void markAsDelivered(Long orderId, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        Order order = orderRepository.findByIdAndUser(orderId, user)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getStatus() != OrderStatus.SHIPPED) {
+            throw new RuntimeException("Only SHIPPED orders can be marked as delivered.");
+        }
+
+        order.setStatus(OrderStatus.DELIVERED);
+        orderRepository.save(order);
+
+        // ✅ AUTOMATIC TRIGGER: Send Order Delivered Email
+        emailService.sendOrderDeliveredEmail(order.getUser().getEmail(), order.getId().toString());
+    }
+
+    // ✅ NEW: Process Refund & Trigger Email
+    @Transactional
+    public void processRefund(Long orderId, Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        Order order = orderRepository.findByIdAndUser(orderId, user)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getStatus() != OrderStatus.RETURN_REQUESTED && order.getStatus() != OrderStatus.RETURNED) {
+            throw new RuntimeException("Refunds can only be processed for returned orders.");
+        }
+
+        order.setStatus(OrderStatus.REFUNDED);
+        orderRepository.save(order);
+
+        // ✅ AUTOMATIC TRIGGER: Send Refund Completed Email
+        // Note: We use .doubleValue() to match the EmailService parameter type
+        emailService.sendRefundCompletedEmail(order.getUser().getEmail(), order.getId().toString(), order.getTotalAmount().doubleValue());
+    }
 
     // 🆕 COMPLETE MAPPING METHOD
     private OrderResponse mapToResponse(Order order) {
