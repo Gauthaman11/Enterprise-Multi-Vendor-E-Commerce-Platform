@@ -1,11 +1,12 @@
 package com.javaenterprise.warehouse.service;
 
+import com.javaenterprise.auth.service.EmailService; // ✅ ADDED IMPORT
 import com.javaenterprise.order.entity.FulfillmentStatus;
 import com.javaenterprise.order.entity.Order;
 import com.javaenterprise.order.entity.OrderItem;
 import com.javaenterprise.order.entity.OrderStatus;
 import com.javaenterprise.order.repository.OrderItemRepository;
-import com.javaenterprise.order.repository.OrderRepository; // 🆕 Added
+import com.javaenterprise.order.repository.OrderRepository;
 import com.javaenterprise.user.entity.User;
 import com.javaenterprise.user.repository.UserRepository;
 import com.javaenterprise.warehouse.entity.WarehouseInventory;
@@ -22,7 +23,8 @@ public class WarehouseFulfillmentService {
     private final OrderItemRepository orderItemRepository;
     private final UserRepository userRepository;
     private final WarehouseInventoryRepository inventoryRepository;
-    private final OrderRepository orderRepository; // 🆕 Added
+    private final OrderRepository orderRepository;
+    private final EmailService emailService; // ✅ ADDED INJECTION
 
     @Transactional
     public OrderItem pickItem(Long orderItemId, Authentication auth) {
@@ -45,7 +47,6 @@ public class WarehouseFulfillmentService {
             throw new RuntimeException("Item must be in PICKED status to be packed.");
         }
 
-        // Deduct from physical inventory when packed
         WarehouseInventory inv = inventoryRepository.findByProductIdAndWarehouseId(
                 item.getProduct().getId(), item.getWarehouse().getId()).orElseThrow();
         inv.setTotalStock(inv.getTotalStock() - item.getQuantity());
@@ -68,10 +69,12 @@ public class WarehouseFulfillmentService {
         item.setFulfillmentStatus(FulfillmentStatus.READY_FOR_SHIPMENT);
         orderItemRepository.save(item);
 
-        // 🆕 Also update the main Order status to SHIPPED so the Vendor sees it!
         Order order = item.getOrder();
         order.setStatus(OrderStatus.SHIPPED);
         orderRepository.save(order);
+
+        // ✅ AUTOMATIC TRIGGER: Send Order Shipped Email in the background
+        emailService.sendOrderShippedEmail(order.getUser().getEmail(), order.getId().toString(), "Tracking information will be updated shortly");
 
         return item;
     }
