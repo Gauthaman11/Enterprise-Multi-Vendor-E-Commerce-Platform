@@ -1,5 +1,6 @@
 package com.javaenterprise.order.service;
 
+import com.javaenterprise.auth.service.EmailService; // ✅ ADDED IMPORT
 import com.javaenterprise.cart.entity.Cart;
 import com.javaenterprise.cart.repository.CartRepository;
 import com.javaenterprise.coupon.dto.CouponValidationResponse;
@@ -44,6 +45,7 @@ public class OrderService {
     private final CouponService couponService;
     private final WarehouseInventoryRepository warehouseInventoryRepository;
     private final WarehouseRepository warehouseRepository;
+    private final EmailService emailService; // ✅ ADDED INJECTION
 
     // 🆕 COMPLETE METHOD - Fetches all orders for admin
     @Transactional(readOnly = true)
@@ -51,7 +53,6 @@ public class OrderService {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
         List<Order> orders = orderRepository.findByUser(user);
 
-        // Debug log to verify items are loaded
         orders.forEach(order ->
                 System.out.println("Order #" + order.getId() + " has " + order.getItems().size() + " items")
         );
@@ -179,6 +180,9 @@ public class OrderService {
         if (appliedCode != null) {
             couponService.trackUsage(appliedCode, user, savedOrder, discount);
         }
+
+        // ✅ AUTOMATIC TRIGGER: Send Order Placed Email in the background
+        emailService.sendOrderPlacedEmail(user.getEmail(), savedOrder.getId().toString(), savedOrder.getTotalAmount());
 
         return mapToResponse(savedOrder);
     }
