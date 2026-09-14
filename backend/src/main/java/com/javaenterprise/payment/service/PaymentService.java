@@ -1,9 +1,10 @@
 package com.javaenterprise.payment.service;
 
+import com.javaenterprise.auth.service.EmailService; // ✅ ADDED IMPORT
 import com.javaenterprise.cart.dto.CartSummaryResponse;
 import com.javaenterprise.cart.service.CartService;
 import com.javaenterprise.coupon.dto.CouponValidationResponse;
-import com.javaenterprise.coupon.service.CouponService; // 🆕 ADD THIS IMPORT
+import com.javaenterprise.coupon.service.CouponService;
 import com.javaenterprise.order.dto.OrderResponse;
 import com.javaenterprise.order.service.OrderService;
 import com.javaenterprise.payment.dto.PaymentResponse;
@@ -35,7 +36,8 @@ public class PaymentService {
     private final CartService cartService;
     private final OrderService orderService;
     private final UserRepository userRepository;
-    private final CouponService couponService; // 🆕 INJECT COUPON SERVICE
+    private final CouponService couponService;
+    private final EmailService emailService; // ✅ ADDED INJECTION
 
     @Value("${razorpay.key.id}")
     private String razorpayKeyId;
@@ -43,7 +45,6 @@ public class PaymentService {
     @Value("${razorpay.key.secret}")
     private String razorpayKeySecret;
 
-    // 🆕 ADD 'couponCode' parameter
     @Transactional
     public PaymentResponse initiatePayment(Authentication authentication, String couponCode) {
         User user = userRepository.findByEmail(authentication.getName())
@@ -54,17 +55,14 @@ public class PaymentService {
             throw new RuntimeException("Cart is empty");
         }
 
-        // 🆕 START COUPON LOGIC
         BigDecimal amount = cart.getTotalAmount();
         if (couponCode != null && !couponCode.isBlank()) {
             CouponValidationResponse v = couponService.validate(couponCode, amount);
             if (!v.isValid()) throw new RuntimeException(v.getMessage());
-            amount = v.getFinalTotal(); // Razorpay will charge the discounted amount
+            amount = v.getFinalTotal();
         }
-        // 🆕 END COUPON LOGIC
 
         try {
-            // Razorpay requires amount in paise
             int amountInPaise = amount.multiply(BigDecimal.valueOf(100)).intValue();
 
             RazorpayClient razorpayClient = new RazorpayClient(razorpayKeyId, razorpayKeySecret);
@@ -78,7 +76,7 @@ public class PaymentService {
             Payment payment = Payment.builder()
                     .transactionId(razorpayOrder.get("receipt"))
                     .razorpayOrderId(razorpayOrder.get("id"))
-                    .amount(amount) // 🆕 Save the DISCOUNTED amount to the payment record
+                    .amount(amount)
                     .status(PaymentStatus.INITIATED)
                     .user(user)
                     .build();
@@ -99,7 +97,6 @@ public class PaymentService {
         }
     }
 
-    // 🆕 ADD 'couponCode' parameter
     @Transactional
     public OrderResponse verifyAndProcessPayment(Map<String, String> payload, Authentication authentication, Long addressId, String couponCode) {
         String razorpayOrderId = payload.get("razorpay_order_id");
@@ -108,6 +105,8 @@ public class PaymentService {
 
         Payment payment = paymentRepository.findByRazorpayOrderId(razorpayOrderId)
                 .orElseThrow(() -> new RuntimeException("Payment record not found"));
+        
+        User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
 
         try {
             JSONObject options = new JSONObject();
@@ -127,15 +126,22 @@ public class PaymentService {
                 // 1. Create the order
                 OrderResponse orderResponse = orderService.checkout(authentication, addressId, couponCode);
 
-                // 2. 🆕 Link the Payment to the newly created Order
+                // 2. Link the Payment to the newly created Order
                 payment.setOrderId(orderResponse.getOrderId());
                 paymentRepository.save(payment);
+
+                // ✅ AUTOMATIC TRIGGER: Send Payment Success Email
+                emailService.sendPaymentSuccessEmail(user.getEmail(), orderResponse.getOrderId().toString(), razorpayPaymentId, payment.getAmount().doubleValue());
 
                 return orderResponse;
             } else {
                 payment.setStatus(PaymentStatus.FAILED);
                 payment.setFailureReason("Invalid Razorpay Signature");
                 paymentRepository.save(payment);
+                
+                // ✅ AUTOMATIC TRIGGER: Send Payment Failed Email
+                emailService.sendPaymentFailedEmail(user.getEmail(), payment.getTransactionId());
+                
                 throw new RuntimeException("Payment verification failed. Invalid signature.");
             }
         } catch (RazorpayException e) {
@@ -160,7 +166,6 @@ public class PaymentService {
                 .toList();
     }
 
-    // 🆕 ADD 'couponCode' parameter
     @Transactional
     public OrderResponse placeCodOrder(Long addressId, String couponCode, Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName())
@@ -171,7 +176,6 @@ public class PaymentService {
             throw new RuntimeException("Cart is empty");
         }
 
-        // 🆕 Calculate final amount if a coupon is applied
         BigDecimal amount = cart.getTotalAmount();
         if (couponCode != null && !couponCode.isBlank()) {
             CouponValidationResponse v = couponService.validate(couponCode, amount);
@@ -179,10 +183,9 @@ public class PaymentService {
             amount = v.getFinalTotal();
         }
 
-        // Create a COD payment record (no Razorpay involved)
         Payment payment = Payment.builder()
                 .transactionId("COD_" + user.getId() + "_" + System.currentTimeMillis())
-                .amount(amount) // 🆕 Save discounted amount
+                .amount(amount)
                 .status(PaymentStatus.SUCCESS)
                 .paymentMethod("COD")
                 .user(user)
@@ -190,7 +193,6 @@ public class PaymentService {
 
         paymentRepository.save(payment);
 
-        // 🆕 PASS couponCode to checkout
         return orderService.checkout(authentication, addressId, couponCode);
     }
 }
