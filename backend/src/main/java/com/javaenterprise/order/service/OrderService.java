@@ -182,7 +182,7 @@ public class OrderService {
         }
 
         // ✅ AUTOMATIC TRIGGER: Send Order Placed Email in the background
-        emailService.sendOrderPlacedEmail(user.getEmail(), savedOrder.getId().toString(), savedOrder.getTotalAmount());
+           emailService.sendOrderPlacedEmail(user.getEmail(), savedOrder.getId().toString(), savedOrder.getTotalAmount().doubleValue());
 
         return mapToResponse(savedOrder);
     }
