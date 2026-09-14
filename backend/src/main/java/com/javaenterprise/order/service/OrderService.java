@@ -259,7 +259,7 @@ public class OrderService {
         Order order = orderRepository.findByIdAndUser(orderId, user)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        if (order.getStatus() != OrderStatus.RETURN_REQUESTED && order.getStatus() != OrderStatus.RETURNED) {
+        i   if (order.getStatus() != OrderStatus.RETURN_REQUESTED) {
             throw new RuntimeException("Refunds can only be processed for returned orders.");
         }
 
